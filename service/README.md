@@ -1,28 +1,41 @@
-# Fermín service
+# Rust service
 
-This Rust crate builds three binaries:
+This crate builds three commands:
 
-- `fermin-relay`: durable client API, SSE stream, and engine rendezvous.
-- `fermin-engine`: local Codex App Server supervisor and relay bridge.
-- `ferminctl`: bounded diagnostics for the local Codex installation.
+- `fermin-relay` accepts client commands, stores durable state, streams SSE
+  updates, and connects to the engine.
+- `fermin-engine` runs beside Codex, supervises Codex App Server, and bridges
+  it to the relay.
+- `ferminctl` checks the local Codex installation without exposing unrestricted
+  diagnostics.
 
-## Verify
+## Test it
 
 ```bash
 cargo fmt --check
-cargo test
+cargo test --locked
 ```
 
-## Configuration
+## Configure it
 
-Start from `config/relay.example.toml` and `config/engine.example.toml`. Secret
-fields are **file paths**, never inline credentials. The loader requires
-absolute token paths, private regular files, loopback listeners, absolute
-workspace roots, and TLS for a non-loopback engine-to-relay URL.
+Start with:
 
-The relay and engine keep separate SQLite databases. SQLite WAL is appropriate
-for this single-host implementation; it is not presented as the storage layer
-for a future horizontally scaled multi-tenant service.
+- `config/relay.example.toml`
+- `config/engine.example.toml`
 
-See the root [self-hosting guide](../docs/SELF_HOSTING.md) for an end-to-end
-development run.
+The real local filenames are ignored by Git.
+
+Secret fields contain **absolute paths to token files**, never token values.
+The loader rejects:
+
+- relative token paths;
+- token files with permissive modes;
+- non-loopback listeners;
+- relative workspace roots; and
+- a non-loopback engine-to-relay URL without TLS.
+
+The relay and engine use separate SQLite databases in WAL mode. That design is
+for the current single-user deployment. Do not treat it as a multi-tenant,
+horizontally scaled storage design.
+
+Follow [Self-hosting](../docs/SELF_HOSTING.md) for the complete local run.

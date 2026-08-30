@@ -1,70 +1,18 @@
 # Architecture
 
-## Product thesis
+## Short version
 
-Fermín Code turns a Mac that already runs Codex into a remotely operable agent
-host. Codex remains responsible for reasoning, sessions, turns, tools,
-approvals, sandboxing, and workspace execution. Fermín is responsible for
-transporting intent and state between that host and trusted clients.
+Fermín Code makes a Mac that already runs Codex reachable from trusted remote
+clients.
 
-It is closer to a semantic remote-control plane than to remote desktop: clients
-send commands and receive structured events instead of streaming pixels.
+- Codex reasons and executes.
+- Fermín carries commands and session state reliably.
+- The controlled Mac keeps Codex App Server local.
 
-## Components
+This is not remote desktop. The clients send structured commands and receive
+structured events; they do not stream the Mac's screen.
 
-### Fermín Engine
-
-The engine runs beside Codex on each controlled Mac. It:
-
-- starts and supervises a local Codex App Server process;
-- communicates with App Server through JSONL on standard input/output;
-- probes the Codex version, schema, models, and capabilities at startup;
-- restricts project access to configured absolute `workspaceRoots`;
-- translates Fermín commands into Codex thread and turn operations;
-- persists session state, commands, events, cursors, epochs, and leases in
-  SQLite WAL;
-- exposes only sessions managed by Fermín;
-- processes sessions independently so one busy conversation does not block all
-  others; and
-- keeps App Server off the public network.
-
-### Fermín Relay
-
-The relay is the durable meeting point between clients and engines. It:
-
-- accepts authenticated client commands over HTTP;
-- persists a command before acknowledging acceptance;
-- deduplicates retries through idempotency keys;
-- stores commands, snapshots, events, aliases, and cursors in SQLite;
-- emits ordered events over Server-Sent Events (SSE);
-- resumes an event stream from a cursor or `Last-Event-ID`;
-- tracks engine heartbeat and lease state;
-- fences stale engine generations; and
-- can retain work while an engine is temporarily disconnected.
-
-The engine opens the WebSocket connection outbound. The relay does not need an
-inbound port on the controlled Mac.
-
-Fermín deliberately does not claim exactly-once execution. A crash after a
-command reaches Codex but before its result is durably recorded can be
-ambiguous. Such work is represented as `unknown` and must be reconciled rather
-than blindly repeated.
-
-### Desktop and Mobile
-
-Both Apple clients are relay clients, not local harnesses. They use:
-
-- REST for queries and durable commands;
-- SSE for primary live updates;
-- persisted cursors for reconnection;
-- bounded polling as recovery when streaming is unavailable; and
-- Keychain for bearer tokens.
-
-The clients support two explicit host profiles and a client-side aggregate
-view. Historical internal values are `personal`, `puky`, and `all`; public UI
-language is Primary, Secondary, and All.
-
-## Protocol paths
+## Data path
 
 ```text
 Client ──HTTPS──▶ Relay ──outbound WebSocket──▶ Engine ──stdio──▶ Codex App Server
@@ -72,41 +20,109 @@ Client ──HTTPS──▶ Relay ──outbound WebSocket──▶ Engine ─�
    └──────SSE────────┴──── durable SQLite state ───┘
 ```
 
-The engine-relay envelope carries a protocol version, engine identity,
-connection epoch, sequence, acknowledgement, resume cursor, and fencing
-generation. WebSocket supplies framing; Fermín supplies the durable semantics.
+## What each component does
 
-## General core versus original deployment
+### Engine
 
-| Reusable core | Original private deployment, not published as configuration |
+The engine runs on the Mac controlled by Fermín. It:
+
+- starts and monitors Codex App Server;
+- talks to App Server through JSONL on standard input/output;
+- checks the Codex version, schema, models, and required capabilities at
+  startup;
+- rejects project paths outside the configured `workspaceRoots`;
+- converts Fermín commands into Codex thread and turn calls;
+- stores sessions, commands, events, cursors, epochs, and leases in SQLite
+  WAL;
+- exposes only sessions managed by Fermín;
+- processes sessions separately, so one slow session does not block the rest;
+  and
+- never exposes Codex App Server to the public network.
+
+### Relay
+
+The relay connects clients to engines. It:
+
+- authenticates client HTTP requests;
+- saves each command before returning an accepted response;
+- uses idempotency keys to collapse repeated submissions;
+- stores commands, snapshots, events, aliases, and cursors in SQLite;
+- sends ordered live updates over Server-Sent Events (SSE);
+- resumes SSE from a cursor or `Last-Event-ID`;
+- tracks engine heartbeats and leases;
+- blocks stale engine generations from writing state; and
+- holds queued work while an engine is temporarily offline.
+
+The engine connects **out** to the relay through WebSocket. The controlled Mac
+does not need a public inbound engine port.
+
+### Desktop and Mobile
+
+The Apple apps are relay clients. They do not run Codex themselves. They use:
+
+- REST for reads and durable commands;
+- SSE for live updates;
+- saved cursors for reconnect;
+- bounded polling when SSE is unavailable; and
+- Keychain for client tokens.
+
+Both apps support two host profiles plus an aggregate view. The UI calls them
+Primary, Secondary, and All. The protocol still contains the older values
+`personal`, `puky`, and `all` for compatibility.
+
+## What “durable” means here
+
+WebSocket only moves frames. Fermín adds the state needed to recover:
+
+- protocol version;
+- engine identity;
+- connection epoch;
+- ordered sequence numbers;
+- acknowledgements;
+- resume cursor; and
+- fencing generation.
+
+Fermín does not promise exactly-once execution. There is one unavoidable edge
+case: Codex may receive a command and the engine may crash before it records
+the result. Fermín marks that command `unknown` and reconciles the session. It
+does not repeat the command blindly.
+
+## Reusable code and private deployment details
+
+| Included in this repository | Specific to the original private setup |
 |---|---|
-| Local engine beside Codex | One Mac acting as a permanent central server |
-| Outbound host connection | A specific Cloudflare account and domain |
-| REST commands and SSE events | Fixed route names for two named Macs |
-| Replay, idempotency, leases, fencing | Personal launchd and PM2 services |
-| SQLite on the local host | Personal filesystem paths |
-| Workspace allow-list | Preinstalled/authenticated Codex environment |
-| Client tokens in Keychain | Manually provisioned production tokens |
-| Offline queue and reconnect | A machine configured never to sleep |
+| Engine beside Codex | One always-on Mac used as the central server |
+| Outbound engine connection | A private Cloudflare account and domain |
+| REST commands and SSE events | Route names chosen for two personal Macs |
+| Replay, idempotency, leases, and fencing | Personal launchd and PM2 services |
+| Local SQLite databases | Personal filesystem paths |
+| Workspace allow-list | A preconfigured Codex login |
+| Keychain token storage | Production tokens copied by the owner |
+| Offline queue and reconnect | A Mac configured not to sleep |
 
-The repository retains legacy path aliases (`/fermin-code`,
-`/fermin-code-puky`, and `/sync-hub`) for compatibility. New deployments may
-use the unprefixed API surface and should choose their own public routing.
+Compatibility aliases `/fermin-code`, `/fermin-code-puky`, and `/sync-hub`
+remain in the router. A new deployment can use the unprefixed API and choose
+its own external paths.
 
 ## Codex boundary
 
-Fermín does not implement a second tool protocol or model runtime. The engine
-uses the local App Server API and leaves Codex authentication on the host. For
-current App Server concepts and transports, consult the official
-[Codex App Server documentation](https://developers.openai.com/codex/app-server/).
+Fermín does not implement a model runtime or a second tool system. The engine
+uses the local App Server API. Codex authentication stays on the host. See the
+official [Codex App Server documentation](https://learn.chatgpt.com/docs/app-server)
+for App Server concepts.
 
 ## Automation and MCP
 
-An external application that wants to create a Fermín session and attach a
-snapshot should eventually use an Automation API: the application is asking
-Fermín to start work.
+The repository does not include a public Automation API or an infrastructure
+MCP integration.
 
-MCP fits the opposite direction. Once Codex is already working, a local,
-least-privilege MCP server can let it query fresh data or invoke a narrow host
-capability. The relay itself should not be redefined as an MCP server; it owns
-durability, routing, identity, and reconnection.
+They solve different problems if added by a deployment:
+
+- **Automation API:** another app asks Fermín to create work and supplies
+  structured context.
+- **Local MCP server:** Codex is already working and needs fresh, narrowly
+  scoped data or actions from the host.
+- **Relay:** routes, stores, resumes, and authenticates remote work.
+
+The relay is not an MCP server. No future integration is promised by this
+document.

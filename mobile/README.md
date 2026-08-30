@@ -1,36 +1,40 @@
 # Fermín Code Mobile
 
-Native SwiftUI iOS client for the Fermín relay. The current Xcode target and
-scheme retain the historical internal name `KyCode`; the shipped product name
-is Fermín Code.
+This is the native SwiftUI iOS client for a Fermín relay. The product is
+Fermín Code. The Xcode project and scheme still use the older internal name
+`KyCode`.
 
-## Generate and build
+## Generate the project
 
 ```bash
 xcodegen generate
 open KyCode.xcodeproj
 ```
 
-Before signing, customize these settings in `project.yml` or Xcode:
+Before signing, set your own values in `project.yml` or Xcode:
 
 - bundle identifiers;
 - `FERMIN_CODE_APP_GROUP`;
 - `FERMIN_CODE_PRIMARY_RELAY_URL`;
 - `FERMIN_CODE_SECONDARY_RELAY_URL`; and
-- your Apple development team.
+- Apple development team.
 
-The repository contains no development team, provisioning profile, certificate,
-or production relay URL. Remote relays should use HTTPS. Local networking is
-enabled for developer-controlled discovery and testing.
+The repository contains no signing team, certificate, provisioning profile,
+or production relay URL. Use HTTPS for remote relays. Local network access is
+only for discovery and testing on a network you control.
 
-## Optional provider features
+## Provider keys are optional, not part of core chat
 
-The core Fermín chat uses Codex authentication on the Mac running the engine;
-it does not require an OpenAI or model-provider key in the app bundle.
+Core chat uses the Codex login on the engine Mac. It does not need an OpenAI or
+other model-provider key inside the iOS bundle.
 
-Some optional voice, narration, and share workflows read
-`Resources/App/Secrets.plist`. If you use them, copy
-`Secrets.example.plist` to the ignored filename and replace only the required
-placeholders. Never commit that file. An iOS bundle cannot safely conceal a
-shared service secret, so production versions should exchange long-lived
-provider credentials for a backend-mediated design.
+Optional voice, narration, and share features can read
+`Resources/App/Secrets.plist`. To test one of them:
+
+1. Copy `Secrets.example.plist` to the ignored `Secrets.plist` filename.
+2. Replace only the placeholders required by that feature.
+3. Never commit the resulting file.
+
+An iOS app cannot safely hide a shared long-lived service secret. Do not ship
+provider credentials in a public build; put that exchange behind a backend you
+control.

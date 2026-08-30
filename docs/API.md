@@ -1,89 +1,95 @@
-# API surface
+# API
 
-The Rust source is the protocol authority. This document is a map for readers,
-not a frozen compatibility promise for `v0.1`.
+Use this page as a route map. The Rust code in `service/src/api.rs` is the
+actual protocol definition. The `v0.1` API is not frozen.
 
-## Client authentication
+## Authentication
 
-All `/api/mobile/*` routes require:
+Every `/api/mobile/*` request needs the client token:
 
 ```http
 Authorization: Bearer <client-token>
 ```
 
-Protected responses use private, no-store cache policy. `/healthz` is public
-and intentionally contains bounded operational metadata.
+Protected responses use a private `no-store` cache policy. `/healthz` is
+public and returns only bounded readiness data.
 
-## Client routes
+The engine uses a different token. Do not reuse the client token for the
+engine connection.
 
-| Method and path | Purpose |
+## Routes used by Desktop and Mobile
+
+| Request | Result |
 |---|---|
 | `GET /healthz` | Relay and engine readiness |
-| `GET /api/mobile/sessions` | Managed session summaries |
-| `POST /api/mobile/sessions` | Create a session |
-| `GET /api/mobile/sessions/{id}` | Session detail |
-| `POST /api/mobile/sessions/{id}/message` | Submit a durable message command |
-| `POST /api/mobile/sessions/{id}/steer` | Steer an active turn |
-| `POST /api/mobile/sessions/{id}/interrupt` | Interrupt current work |
-| `POST /api/mobile/sessions/{id}/archive` | Non-destructive archive |
-| `DELETE /api/mobile/sessions/{id}/permanent` | Explicit permanent deletion |
-| `PUT /api/mobile/sessions/{id}/pinned` | Synchronize pinned state |
+| `GET /api/mobile/sessions` | Session summaries managed by Fermín |
+| `POST /api/mobile/sessions` | New session |
+| `GET /api/mobile/sessions/{id}` | Full session detail |
+| `POST /api/mobile/sessions/{id}/message` | Durable user message |
+| `POST /api/mobile/sessions/{id}/steer` | New instruction for the active turn |
+| `POST /api/mobile/sessions/{id}/interrupt` | Stop current work |
+| `POST /api/mobile/sessions/{id}/archive` | Archive without deleting history |
+| `DELETE /api/mobile/sessions/{id}/permanent` | Permanent deletion |
+| `PUT /api/mobile/sessions/{id}/pinned` | Set the shared pinned state |
 | `POST /api/mobile/sessions/{id}/rename` | Rename a session |
 | `POST /api/mobile/sessions/{id}/minimize` | Hide a session |
 | `POST /api/mobile/sessions/{id}/restore` | Restore a hidden session |
-| `GET /api/mobile/sessions/{id}/models` | Available model catalog |
-| `POST /api/mobile/sessions/{id}/model-settings` | Update model settings |
-| `POST /api/mobile/sessions/{id}/run-mode` | Update run mode |
-| `POST /api/mobile/sessions/{id}/features` | Update Fermín feature flags |
-| `POST /api/mobile/sessions/{id}/attachments` | Upload a bounded attachment |
-| `GET /api/mobile/commands/{id}` | Durable command state |
-| `GET /api/mobile/projects` | Authorized workspace projects |
-| `POST /api/mobile/file-preview` | Bounded file preview |
-| `GET /api/mobile/attachments/content` | Bounded attachment content |
-| `GET /api/mobile/session-history` | Search archived/history sessions |
-| `POST /api/mobile/session-history/resume` | Resume a history item |
-| `GET /api/mobile/session-recovery` | Find recoverable sessions |
-| `POST /api/mobile/session-recovery/recover` | Recover a session |
-| `GET /api/mobile/stream` | SSE event stream |
+| `GET /api/mobile/sessions/{id}/models` | Models available to that session |
+| `POST /api/mobile/sessions/{id}/model-settings` | Change model settings |
+| `POST /api/mobile/sessions/{id}/run-mode` | Change run mode |
+| `POST /api/mobile/sessions/{id}/features` | Change Fermín feature flags |
+| `POST /api/mobile/sessions/{id}/attachments` | Upload a size-limited attachment |
+| `GET /api/mobile/commands/{id}` | Current durable command state |
+| `GET /api/mobile/projects` | Allowed workspace projects |
+| `POST /api/mobile/file-preview` | Size-limited file preview |
+| `GET /api/mobile/attachments/content` | Size-limited attachment content |
+| `GET /api/mobile/session-history` | Search previous sessions |
+| `POST /api/mobile/session-history/resume` | Resume a previous session |
+| `GET /api/mobile/session-recovery` | Find a recoverable session |
+| `POST /api/mobile/session-recovery/recover` | Recover a selected session |
+| `GET /api/mobile/stream` | Live SSE updates |
 
-Additional narrow endpoints for subagents, prompt transformation, and prompt
-preferences are defined beside these routes in `service/src/api.rs`.
+`service/src/api.rs` also defines narrow routes for subagents, prompt
+transformation, and prompt preferences.
 
-## Streaming and replay
+## A command response is not the final result
 
-`GET /api/mobile/stream` emits Server-Sent Events with monotonically ordered
-relay sequence identifiers. A client can resume with a query cursor or the
-standard `Last-Event-ID` header. If retained history cannot satisfy a cursor,
-the client must refresh an authoritative snapshot instead of assuming no
-change occurred.
+An accepted response means the relay saved the command. It does not mean Codex
+finished it.
 
-## Durable commands
-
-A successful command acceptance describes durability and includes a command
-identifier. Typical states are:
+Typical states are:
 
 ```text
 accepted → leased → engineDurable → sentToChild → completed
                                                └→ failed/cancelled/unknown
 ```
 
-Clients should reuse an idempotency key when retrying the same user intent and
-must not equate HTTP delivery with Codex completion.
+When retrying the same user action, send the same idempotency key. A new key
+represents a new action.
+
+## Live updates and reconnect
+
+`GET /api/mobile/stream` sends ordered Server-Sent Events. Each event has a
+relay sequence ID. A reconnecting client sends either a query cursor or
+`Last-Event-ID`.
+
+If the relay no longer has enough history for that cursor, the client must
+reload the authoritative snapshot. It must not treat the missing replay as
+“nothing changed.”
 
 ## Engine connection
 
-The engine authenticates separately and connects to:
+The engine connects with WebSocket at:
 
 ```text
 GET /v1/engine/connect
 ```
 
-using WebSocket. Attachment retrieval for the engine uses short-lived opaque
-tokens. Engine and client credentials are deliberately distinct.
+The engine authenticates separately. Attachment downloads use short-lived,
+opaque tokens.
 
-## Compatibility aliases
+## Compatibility paths
 
-For the original two-host installation, the router also exposes the same
-surface below `/fermin-code`, `/fermin-code-puky`, and `/sync-hub`. These are
-legacy deployment aliases, not a recommendation to encode machine names into a
-new public edge.
+The original two-host setup also exposes the API below `/fermin-code`,
+`/fermin-code-puky`, and `/sync-hub`. They remain for compatibility. New
+installations do not need to copy those names.

@@ -1,66 +1,73 @@
 # Security model
 
-Fermín Code can ultimately cause a trusted Mac to read and change files or run
-commands through Codex. Treat the relay as a control plane, not as an ordinary
-chat server.
+## Start with the real risk
 
-## Implemented controls
+Fermín can ask Codex to read files, change a workspace, and run commands on an
+authorized Mac. Treat the relay like an administrative control plane, not like
+a normal chat server.
 
-- Relay and engine listeners are restricted to loopback by configuration
-  validation.
-- Public access is expected to terminate TLS at a reverse proxy or outbound
+If you do not trust a device, network edge, or token holder with that level of
+access, do not connect it.
+
+## Controls already implemented
+
+- Relay and engine listeners must bind to loopback.
+- Remote traffic is designed to enter through a separate TLS edge or outbound
   tunnel.
-- Client and engine bearer tokens are separate.
-- Secret values are loaded from absolute, private regular files; the service
-  rejects permissive Unix file modes.
-- Client tokens are stored in Apple Keychain.
-- Workspace roots are an explicit engine allow-list.
-- Request, JSONL, frame, replay, preview, and attachment sizes are bounded.
-- Commands have idempotency keys and durable states.
-- Engine leases and fencing prevent an older connection generation from
-  retaining authority.
+- Clients and engines use different bearer tokens.
+- The service reads secrets from absolute private files and rejects permissive
+  Unix file modes.
+- Apple clients keep their tokens in Keychain.
+- `workspaceRoots` limits which directories the engine accepts.
+- Requests, JSONL lines, WebSocket frames, replay pages, previews, and
+  attachments have size limits.
+- Idempotency keys prevent duplicate durable commands during retries.
+- Engine leases and fencing block an older connection from keeping authority.
 - Protected responses disable shared caching.
 - Codex App Server stays local to the controlled Mac.
 
-## Deployment obligations
+## What the operator must secure
 
-An operator must still:
+The repository cannot make deployment choices for you. The operator must:
 
-- place HTTPS/WSS in front of every non-loopback connection;
-- generate independent random tokens with at least 32 characters;
-- keep token files at mode `0600` and out of logs, TOML, shell history, and
-  source control;
-- choose the narrowest possible workspace roots;
-- configure Codex sandbox and approval behavior appropriate to the host;
-- protect and update the host OS, Codex CLI, tunnel, and reverse proxy; and
-- decide how long relay databases and attachments are retained.
+1. Put HTTPS and WSS in front of every non-loopback connection.
+2. Generate separate random tokens of at least 32 characters.
+3. Keep token files at mode `0600` and out of logs, TOML, shell history, and
+   source control.
+4. Give the engine the smallest useful `workspaceRoots` list.
+5. Choose Codex sandbox and approval settings that match the host's risk.
+6. Update and protect macOS, Codex, the tunnel, and the reverse proxy.
+7. Set a retention policy for relay databases and attachments.
 
-Do not put a bearer token in a URL. Do not expose the engine listener or Codex
+Never put a bearer token in a URL. Never expose the engine listener or Codex
 App Server directly to the public internet.
 
-## Not yet a public multi-tenant security boundary
+## Security features not included
 
-`v0.1` is a single-user, self-hosted implementation. It does not yet provide:
+This release is single-user and self-hosted. It does not include:
 
-- accounts, OAuth/OIDC, or device pairing;
-- short-lived device credentials and rotation workflows;
-- tenant isolation or per-object authorization across accounts;
-- a hosted audit log and administrative revocation surface;
-- end-to-end encrypted message payloads;
-- signed/notarized binary distribution and automatic updates; or
+- user accounts or OAuth/OIDC;
+- device pairing;
+- short-lived device credentials or a rotation UI;
+- tenant isolation and per-object authorization across accounts;
+- a hosted audit and device-revocation console;
+- end-to-end encryption for message payloads;
+- signed or notarized binary distribution;
+- automatic updates; or
 - a safe default authority profile for non-technical users.
 
-Those are product requirements before offering a shared hosted relay.
+Do not use the current relay as a shared multi-tenant service.
 
-## Sleep and offline execution
+## Queued work can run later
 
-Queued work may execute when a host reconnects. A future public product needs
-expiry and confirmation policies so a sensitive command cannot unexpectedly
-run days later. A powered-off or network-isolated Mac remains unavailable;
-wake-on-network is not a universal guarantee.
+If the host is offline, a saved command can run when it reconnects. This
+release does not provide a general user-facing expiry and reconfirmation policy
+for delayed commands. Only queue work that is still safe to execute later.
 
-## Reporting a vulnerability
+A sleeping, powered-off, or network-isolated Mac remains unavailable. Network
+wake features are not a guarantee.
 
-Do not open a public issue for a vulnerability or suspected exposed secret.
-Follow [SECURITY.md](../SECURITY.md) and use GitHub private vulnerability
-reporting.
+## Report a vulnerability privately
+
+Do not put exploit details or a suspected secret in a public issue. Follow
+[SECURITY.md](../SECURITY.md) and use GitHub private vulnerability reporting.
