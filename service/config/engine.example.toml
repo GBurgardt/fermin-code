@@ -1,0 +1,20 @@
+bind = "127.0.0.1:8841"
+engineId = "my-mac"
+# Replace this with the absolute path printed by `command -v codex`.
+codexPath = "/absolute/path/to/codex"
+databasePath = "/Users/USERNAME/Library/Application Support/FerminCode/state/engine.sqlite3"
+authTokenFile = "/Users/USERNAME/Library/Application Support/FerminCode/secrets/local-api-token"
+workspaceRoots = ["/Users/USERNAME/projects"]
+# Compatibility-only field. Fermín Code never auto-discovers global Codex threads.
+discoveryRoots = []
+defaultModel = "gpt-5.6-sol"
+defaultEffort = "max"
+maxBodyBytes = 54525952
+maxJsonlBytes = 67108864
+heartbeatSeconds = 10
+
+[relay]
+url = "wss://relay.example.com/fermin-code/v1/engine/connect"
+tokenFile = "/Users/USERNAME/Library/Application Support/FerminCode/secrets/engine-token"
+reconnectMinMs = 250
+reconnectMaxMs = 30000

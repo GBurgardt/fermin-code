@@ -1,0 +1,59 @@
+[package]
+name = "fermin-code"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.92"
+
+[lib]
+name = "fermin_code"
+path = "src/lib.rs"
+
+[[bin]]
+name = "fermin-engine"
+path = "src/bin/fermin-engine.rs"
+
+[[bin]]
+name = "fermin-relay"
+path = "src/bin/fermin-relay.rs"
+
+[[bin]]
+name = "ferminctl"
+path = "src/bin/ferminctl.rs"
+
+[dependencies]
+anyhow = "1.0"
+async-stream = "0.3"
+axum = { version = "0.8.9", features = ["json", "macros", "multipart", "ws"] }
+bytes = "1.10"
+clap = { version = "4.5", features = ["derive", "env"] }
+futures-util = "0.3"
+mime_guess = "2.0"
+nix = { version = "0.30", features = ["process", "signal"] }
+rand = "0.9"
+reqwest = { version = "0.13.2", default-features = false, features = ["rustls", "stream"] }
+rusqlite = { version = "0.40.2", features = ["bundled", "serde_json", "uuid"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10"
+subtle = "2.6"
+thiserror = "2.0"
+tokio = { version = "1.48", features = ["full", "test-util"] }
+tokio-stream = { version = "0.1", features = ["sync"] }
+tokio-tungstenite = { version = "0.30", features = ["rustls-tls-webpki-roots"] }
+tokio-util = { version = "0.7.18", features = ["codec", "rt"] }
+toml = "0.9"
+tower = { version = "0.5", features = ["util"] }
+tower-http = { version = "0.6", features = ["catch-panic", "cors", "limit", "request-id", "trace"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
+url = "2.5"
+uuid = { version = "1.18", features = ["serde", "v4", "v7"] }
+
+[dev-dependencies]
+http-body-util = "0.1"
+tempfile = "3.23"
+
+[profile.release]
+lto = "off"
+codegen-units = 16
+strip = "symbols"

@@ -1,0 +1,45 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+.envrc
+*.pem
+*.p12
+*.pfx
+*.mobileprovision
+*.provisionprofile
+*.cer
+*.der
+*.key
+*.keychain
+*.keychain-db
+*.sqlite
+*.sqlite3
+*.sqlite3-*
+*.log
+
+# Rust
+service/target/
+
+# Swift Package Manager and Xcode
+**/.build/
+**/DerivedData/
+**/*.app/
+**/*.ipa
+**/*.xcarchive/
+**/*.xcuserstate
+**/xcuserdata/
+desktop/FerminCodeDesktop.xcodeproj/
+desktop/Config/Info.local.plist
+mobile/KyCode.xcodeproj/
+
+# Local screenshot references may contain private session metadata. Only the
+# reviewed English publication images are tracked.
+docs/images/originals/
+
+# Local configuration and credentials
+service/config/*.toml
+!service/config/*.example.toml
+service/config/*.token
+mobile/Resources/App/Secrets*.plist
+!mobile/Resources/App/Secrets.example.plist

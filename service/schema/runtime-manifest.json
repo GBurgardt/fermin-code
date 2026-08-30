@@ -1,0 +1,32 @@
+{
+  "generatedBy": "codex-cli 0.147.0",
+  "generatedAt": "2026-08-14",
+  "experimentalApi": true,
+  "transport": "stdio://",
+  "stableSchemaSha256": "babfd5c98cd978dd858b4762cdfbc9fba941e1a0e4053de0050e4082ae1f075a",
+  "v2SchemaSha256": "ff10829cd75b67297019b39ab508ac699198574663579aa18336b7dc55ea178f",
+  "auditedSourceCommit": "be6e8eac029b183056b7e4402879f15d2c85f61b",
+  "requiredMethods": [
+    "initialize",
+    "model/list",
+    "thread/start",
+    "thread/resume",
+    "thread/read",
+    "thread/list",
+    "thread/archive",
+    "thread/delete",
+    "thread/settings/update",
+    "turn/start",
+    "turn/steer",
+    "turn/interrupt"
+  ],
+  "optionalMethods": [
+    "thread/goal/set",
+    "thread/goal/get",
+    "thread/goal/clear"
+  ],
+  "testModel": "gpt-5.6-luna",
+  "testReasoningEffort": "high",
+  "disallowedProviders": ["xai"],
+  "disallowedModelPrefixes": ["grok"]
+}

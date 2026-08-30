@@ -1,0 +1,9 @@
+bind = "127.0.0.1:8840"
+databasePath = "/Users/USERNAME/services/fermin-code/state/relay.sqlite3"
+# These values are paths only. Never put bearer-token contents in TOML, PM2,
+# command arguments, or environment variables.
+authTokenFile = "/Users/USERNAME/services/fermin-code/secrets/mobile-token"
+engineTokenFile = "/Users/USERNAME/services/fermin-code/secrets/engine-token"
+heartbeatSeconds = 10
+engineLeaseSeconds = 30
+maxBodyBytes = 54525952

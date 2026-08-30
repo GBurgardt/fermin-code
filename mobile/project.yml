@@ -1,0 +1,277 @@
+name: KyCode
+options:
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+  bundleIdPrefix: dev.fermincode
+
+configs:
+  Debug: debug
+  Release: release
+
+settings:
+  base:
+    MARKETING_VERSION: 1.0
+    CURRENT_PROJECT_VERSION: 6
+    FERMIN_CODE_APP_GROUP: group.dev.fermincode.mobile
+    FERMIN_CODE_PRIMARY_RELAY_URL: https://relay.example.com/fermin-code
+    FERMIN_CODE_SECONDARY_RELAY_URL: https://relay.example.com/fermin-code-puky
+
+packages:
+  Eagle:
+    url: https://github.com/Picovoice/eagle.git
+    from: 3.0.1
+
+schemes:
+  KyCode:
+    build:
+      targets:
+        Explainer: all
+        ExplainerShareExtension: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      environmentVariables:
+        KYCODE_RUN_LIVE_AUDIO_QA: $(KYCODE_RUN_LIVE_AUDIO_QA)
+        KYCODE_LIVE_AUDIO_QA_SEARCH: $(KYCODE_LIVE_AUDIO_QA_SEARCH)
+        KYCODE_STABILITY_AUDIO_FIXTURE: $(KYCODE_STABILITY_AUDIO_FIXTURE)
+        KYCODE_STABILITY_AUDIO_SECONDS: $(KYCODE_STABILITY_AUDIO_SECONDS)
+        KYCODE_RUN_LIVE_ISOLATION_QA: $(KYCODE_RUN_LIVE_ISOLATION_QA)
+        KYCODE_ISOLATION_AUDIO_FIXTURE: $(KYCODE_ISOLATION_AUDIO_FIXTURE)
+        KYCODE_RUN_LIVE_SPEAKER_QA: $(KYCODE_RUN_LIVE_SPEAKER_QA)
+        KYCODE_RUN_LIVE_CORPUS_BASELINE_QA: $(KYCODE_RUN_LIVE_CORPUS_BASELINE_QA)
+        KYCODE_VOICE_CORPUS_MANIFEST: $(KYCODE_VOICE_CORPUS_MANIFEST)
+        KYCODE_LIVE_PUKY_TOKEN: $(KYCODE_LIVE_PUKY_TOKEN)
+        KYCODE_LIVE_PERSONAL_TOKEN: $(KYCODE_LIVE_PERSONAL_TOKEN)
+        KYCODE_LIVE_SELECTED_PROFILE: $(KYCODE_LIVE_SELECTED_PROFILE)
+      targets:
+        - KyCodeTests
+        - KyCodeUITests
+    archive:
+      config: Release
+  KyCodeUnitTests:
+    build:
+      targets:
+        Explainer: all
+        ExplainerShareExtension: all
+        KyCodeTests: [test]
+    test:
+      config: Debug
+      targets:
+        - name: KyCodeTests
+          parallelizable: false
+
+targets:
+  Explainer:
+    type: application
+    platform: iOS
+    capabilities:
+      appGroups:
+        groups:
+          - group.dev.fermincode.mobile
+    sources:
+      - path: Sources/App/ExplainerApp.swift
+      - path: Sources/App/KycodeConnectionStore.swift
+      - path: Sources/App/SessionHistory.swift
+      - path: Sources/App/InteractiveLinks.swift
+      - path: Sources/App/FileLink.swift
+      - path: Sources/App/FileViewerViewModel.swift
+      - path: Sources/App/ExplanationViewerViewModel.swift
+      - path: Sources/App/MobileLiveMessage.swift
+      - path: Sources/App/KycodeBonjourDiscovery.swift
+      - path: Sources/App/AudioRecordingService.swift
+      - path: Sources/App/BackgroundRecordingState.swift
+      - path: Sources/App/KycodeKeychain.swift
+      - path: Sources/App/HapticFeedback.swift
+      - path: Sources/App/Services/ExplainerNarrationService.swift
+      - path: Sources/App/Services/MistralTranscriptionService.swift
+      - path: Sources/App/Services/VoiceTranscription.swift
+      - path: Sources/App/Services/VoiceIsolation.swift
+      - path: Sources/App/Services/VoiceSpeakerVerification.swift
+      - path: Sources/App/TweetClipboardIntakeStore.swift
+      - path: Sources/App/TweetAppRouteStore.swift
+      - path: Sources/App/Models/TweetConversation.swift
+      - path: Sources/App/Views/AppTheme.swift
+      - path: Sources/App/Views/KycodeRootView.swift
+      - path: Sources/App/Views/FileViewerSheet.swift
+      - path: Sources/App/Views/ExplanationViewerSheet.swift
+      - path: Sources/App/Views/FullScreenTextEditorSheet.swift
+      - path: Sources/App/Views/KycodeSessionHistoryView.swift
+      - path: Sources/App/Views/TweetHistoryView.swift
+      - path: Sources/ShareExtension/ShareTweetGeneratorView.swift
+      - path: Sources/ShareExtension/ShareTweetGenerationSupport.swift
+      - path: Sources/Shared/LoggingService.swift
+      - path: Sources/Shared/PromptLibrary.swift
+      - path: Sources/Shared/SharedInbox.swift
+      - path: Sources/Shared/TweetGenerationBackgroundCoordinator.swift
+      - path: Sources/Shared/TweetGenerationJob.swift
+      - path: Sources/Shared/TweetGenerationNotifications.swift
+      - path: Sources/Shared/TweetGeneratorModelStore.swift
+      - path: Sources/Shared/TweetComposeDeepLink.swift
+      - path: Sources/Shared/TweetConversationReadStore.swift
+      - path: Sources/Shared/TweetSourceLink.swift
+      - path: Sources/Shared/TweetPendingComposeStore.swift
+      - path: Sources/Shared/XMLExtractor.swift
+      - path: Resources/App/Assets.xcassets
+        buildPhase: resources
+    info:
+      path: Resources/App/Info.plist
+      properties:
+        CFBundleDisplayName: Fermín Code
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        FerminCodeAppGroup: $(FERMIN_CODE_APP_GROUP)
+        FerminCodePrimaryRelayURL: $(FERMIN_CODE_PRIMARY_RELAY_URL)
+        FerminCodeSecondaryRelayURL: $(FERMIN_CODE_SECONDARY_RELAY_URL)
+        NSLocalNetworkUsageDescription: Connect to your KyCode desktop on the local network.
+        CFBundleURLTypes:
+          - CFBundleURLName: dev.fermincode.mobile
+            CFBundleURLSchemes:
+              - kycode
+        NSBonjourServices:
+          - _kycode._tcp
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        NSMicrophoneUsageDescription: Record a short voice prompt to craft your reply.
+        NSSpeechRecognitionUsageDescription: Transcribe your spoken prompt into text.
+        UIBackgroundModes:
+          - audio
+        # CRITICAL: UILaunchScreen with background color to eliminate black bars
+        UILaunchScreen:
+          UIColorName: BackgroundColor
+        UIStatusBarStyle: UIStatusBarStyleDefault
+        UIViewControllerBasedStatusBarAppearance: true
+    settings:
+      base:
+        PRODUCT_NAME: KyCode
+        PRODUCT_MODULE_NAME: KyCode
+        PRODUCT_BUNDLE_IDENTIFIER: dev.fermincode.mobile
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_ENTITLEMENTS: Config/Explainer.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # Use Info.plist for scene manifest (UILaunchScreen is defined there)
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        # Supported orientations
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        INFOPLIST_KEY_UISupportedInterfaceOrientations~ipad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+    dependencies:
+      - target: ExplainerShareExtension
+      - package: Eagle
+    postBuildScripts:
+      - name: Embed Share Extension
+        basedOnDependencyAnalysis: false
+        script: |
+          EXT_NAME="ExplainerShareExtension.appex"
+          SRC="${BUILT_PRODUCTS_DIR}/${EXT_NAME}"
+          DEST="${TARGET_BUILD_DIR}/${PLUGINS_FOLDER_PATH}"
+          if [ -d "${SRC}" ]; then
+            mkdir -p "${DEST}"
+            rsync -a "${SRC}" "${DEST}"
+          fi
+      - name: Copy Secrets And Prompts
+        basedOnDependencyAnalysis: false
+        script: |
+          RES_DIR="${SRCROOT}/Resources/App"
+          DEST="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}"
+          if [ -f "${RES_DIR}/Secrets.plist" ]; then
+            cp "${RES_DIR}/Secrets.plist" "${DEST}/Secrets.plist"
+          fi
+          if [ -d "${RES_DIR}/Prompts" ]; then
+            mkdir -p "${DEST}/Prompts"
+            rsync -a "${RES_DIR}/Prompts/" "${DEST}/Prompts/"
+          fi
+
+  ExplainerShareExtension:
+    type: app-extension
+    platform: iOS
+    capabilities:
+      appGroups:
+        groups:
+          - group.dev.fermincode.mobile
+    sources:
+      - path: Sources/ShareExtension
+      - path: Sources/Shared/LoggingService.swift
+      - path: Sources/Shared/PromptLibrary.swift
+      - path: Sources/Shared/SharedInbox.swift
+      - path: Sources/Shared/TweetGenerationBackgroundCoordinator.swift
+      - path: Sources/Shared/TweetGenerationJob.swift
+      - path: Sources/Shared/TweetGenerationNotifications.swift
+      - path: Sources/Shared/TweetGeneratorModelStore.swift
+      - path: Sources/Shared/TweetComposeDeepLink.swift
+      - path: Sources/Shared/TweetConversationReadStore.swift
+      - path: Sources/Shared/TweetSourceLink.swift
+      - path: Sources/Shared/TweetPendingComposeStore.swift
+      - path: Sources/Shared/XMLExtractor.swift
+      - path: Resources/ShareExtension/Assets.xcassets
+        buildPhase: resources
+    info:
+      path: Resources/ShareExtension/Info.plist
+      properties:
+        CFBundleDisplayName: Fermín Code
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        FerminCodeAppGroup: $(FERMIN_CODE_APP_GROUP)
+        NSMicrophoneUsageDescription: Record a short voice prompt to craft your reply.
+        NSSpeechRecognitionUsageDescription: Transcribe your spoken prompt into text.
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
+          NSExtensionAttributes:
+            NSExtensionActivationDictionaryVersion: 2
+            NSExtensionActivationRule: 'SUBQUERY(extensionItems, $item, SUBQUERY($item.attachments, $attachment, ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.url" || ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.plain-text" || ANY $attachment.registeredTypeIdentifiers UTI-CONFORMS-TO "public.text").@count > 0).@count > 0'
+            NSExtensionActionWantsFullScreenPresentation: true
+    settings:
+      base:
+        PRODUCT_NAME: KyCodeShareExtension
+        PRODUCT_MODULE_NAME: KyCodeShareExtension
+        PRODUCT_BUNDLE_IDENTIFIER: dev.fermincode.mobile.share
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_ENTITLEMENTS: Config/ExplainerShareExtension.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        INFOPLIST_KEY_NSExtensionPointIdentifier: com.apple.share-services
+        INFOPLIST_KEY_NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
+    dependencies: []
+    postBuildScripts:
+      - name: Copy Secrets And Prompts
+        basedOnDependencyAnalysis: false
+        script: |
+          RES_DIR="${SRCROOT}/Resources/App"
+          DEST="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}"
+          if [ -f "${RES_DIR}/Secrets.plist" ]; then
+            cp "${RES_DIR}/Secrets.plist" "${DEST}/Secrets.plist"
+          fi
+          if [ -d "${RES_DIR}/Prompts" ]; then
+            mkdir -p "${DEST}/Prompts"
+            rsync -a "${RES_DIR}/Prompts/" "${DEST}/Prompts/"
+          fi
+
+  KyCodeTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.fermincode.mobile.tests
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/KyCode.app/KyCode
+        BUNDLE_LOADER: $(TEST_HOST)
+    dependencies:
+      - target: Explainer
+
+  KyCodeUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UITests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.fermincode.mobile.uitests
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Explainer
+    dependencies:
+      - target: Explainer

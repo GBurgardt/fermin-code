@@ -1,0 +1,163 @@
+name: FerminCodeDesktop
+
+options:
+  deploymentTarget:
+    macOS: "12.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+  bundleIdPrefix: dev.fermincode
+
+configs:
+  Debug: debug
+  Release: release
+
+settings:
+  base:
+    MARKETING_VERSION: 1.0.0
+    CURRENT_PROJECT_VERSION: 2
+    FERMIN_CODE_PRIMARY_RELAY_URL: https://relay.example.com/fermin-code
+    FERMIN_CODE_SECONDARY_RELAY_URL: https://relay.example.com/fermin-code-puky
+    SWIFT_VERSION: 5.0
+    MACOSX_DEPLOYMENT_TARGET: 12.0
+    ARCHS: $(ARCHS_STANDARD)
+    ONLY_ACTIVE_ARCH: NO
+    CLANG_ENABLE_MODULES: YES
+    SWIFT_STRICT_CONCURRENCY: complete
+
+schemes:
+  FerminCode:
+    build:
+      targets:
+        FerminMac: all
+        FerminCodeDesktopUITests: [test]
+    run:
+      config: Debug
+      executable: FerminMac
+    test:
+      config: Debug
+      gatherCoverageData: true
+      targets:
+        - name: FerminCoreTests
+          parallelizable: true
+        - name: FerminMacTests
+          parallelizable: false
+        - name: FerminCodeDesktopUITests
+          parallelizable: false
+    profile:
+      config: Release
+      executable: FerminMac
+    analyze:
+      config: Debug
+    archive:
+      config: Release
+
+targets:
+  FerminCore:
+    type: framework
+    platform: macOS
+    sources:
+      - path: Sources/FerminCore/FerminCodeRelay
+      - path: Sources/FerminCore/Persistence/TokenVault.swift
+      - path: Sources/FerminCore/Protocol/JSONValue.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.fermincode.desktop.core
+        PRODUCT_MODULE_NAME: FerminCore
+        DEFINES_MODULE: YES
+        GENERATE_INFOPLIST_FILE: YES
+        SKIP_INSTALL: YES
+        CODE_SIGNING_ALLOWED: NO
+
+  FerminMac:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources/FerminMac/FerminMacApp.swift
+      - path: Sources/FerminMac/FerminCodeDesktop
+      - path: Resources/Fermin.icns
+        buildPhase: resources
+    dependencies:
+      - target: FerminCore
+        embed: true
+    info:
+      path: Config/Info.plist
+      properties:
+        CFBundleDevelopmentRegion: es
+        CFBundleDisplayName: Fermín Code
+        CFBundleExecutable: $(EXECUTABLE_NAME)
+        CFBundleIconFile: Fermin.icns
+        CFBundleIdentifier: $(PRODUCT_BUNDLE_IDENTIFIER)
+        CFBundleInfoDictionaryVersion: "6.0"
+        CFBundleName: Fermín Code
+        CFBundlePackageType: APPL
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSApplicationCategoryType: public.app-category.productivity
+        LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
+        NSHighResolutionCapable: true
+        NSHumanReadableCopyright: Copyright © 2026 Germán Burgardt.
+        NSPrincipalClass: NSApplication
+    entitlements:
+      path: Config/FerminMac.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+        com.apple.security.files.user-selected.read-only: true
+    settings:
+      base:
+        PRODUCT_NAME: FerminCode
+        PRODUCT_MODULE_NAME: FerminMac
+        PRODUCT_BUNDLE_IDENTIFIER: dev.fermincode.desktop
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_INJECT_BASE_ENTITLEMENTS: NO
+        INFOPLIST_FILE: Config/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        DEAD_CODE_STRIPPING: YES
+        ENABLE_USER_SCRIPT_SANDBOXING: YES
+
+  FerminCoreTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests/FerminCoreTests/FerminCodeRelayCommandTrackerTests.swift
+      - path: Tests/FerminCoreTests/FerminCodeRelayDecodingTests.swift
+      - path: Tests/FerminCoreTests/FerminCodeRelayHTTPTests.swift
+      - path: Tests/FerminCoreTests/FerminCodeRelayModelPolicyTests.swift
+      - path: Tests/FerminCoreTests/FerminCodeRelayRoutingTests.swift
+      - path: Tests/FerminCoreTests/FerminCodeRelaySSETests.swift
+    dependencies:
+      - target: FerminCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.fermincode.desktop.tests
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGNING_ALLOWED: NO
+
+  FerminMacTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: Tests/FerminMacTests/FerminCodeDesktopPolicyTests.swift
+      - path: Tests/FerminMacTests/FerminCodeDesktopStoreTests.swift
+    dependencies:
+      - target: FerminMac
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.fermincode.desktop.unit-tests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/FerminCode.app/Contents/MacOS/FerminCode
+        BUNDLE_LOADER: $(TEST_HOST)
+
+  FerminCodeDesktopUITests:
+    type: bundle.ui-testing
+    platform: macOS
+    sources:
+      - path: Tests/FerminCodeDesktopUITests
+    dependencies:
+      - target: FerminMac
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.fermincode.desktop.ui-tests
+        GENERATE_INFOPLIST_FILE: YES
+        CODE_SIGN_STYLE: Automatic
