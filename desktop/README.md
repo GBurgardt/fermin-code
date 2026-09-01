@@ -2,18 +2,18 @@
 
 [← Volver al README](../README.md)
 
-Es el cliente nativo SwiftUI para macOS. Se conecta al relay y no se conecta
-directamente con un engine.
+Es la app de macOS para trabajar con las sesiones que pasan por el relay. No se
+conecta directamente con un engine ni ejecuta Codex por su cuenta.
 
-Hace cuatro cosas:
+Su trabajo es simple:
 
 - llama al relay mediante REST;
 - recibe eventos en vivo mediante SSE;
 - guarda tokens de cliente en Keychain; y
 - combina dos perfiles opcionales en una sola vista.
 
-No inicia Codex, no ejecuta el engine y no expone un servidor HTTP local.
-Cerrar el cliente no detiene el trabajo que ya se ejecuta en la Mac host.
+Codex y el engine siguen viviendo en la Mac host. Por eso cerrar Desktop no
+detiene un trabajo que ya está en marcha.
 
 [![Fermín Desktop mostrando sesiones remotas](../docs/images/en/desktop/desktop-main.png)](../docs/images/en/desktop/desktop-main.png)
 
@@ -45,7 +45,7 @@ Configurá:
 - `FERMIN_CODE_PRIMARY_RELAY_URL`
 - `FERMIN_CODE_SECONDARY_RELAY_URL`
 
-En desarrollo y pruebas, variables de entorno con los mismos nombres
+Durante desarrollo y pruebas, las variables de entorno con los mismos nombres
 sobrescriben Info.plist.
 
 El proyecto apunta a `relay.example.com`, que es deliberadamente inoperante.

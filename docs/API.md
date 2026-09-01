@@ -2,27 +2,29 @@
 
 [← Documentación](README.md)
 
-La API permite que un cliente envíe operaciones al relay y recupere su estado.
-Este documento resume las rutas. La definición autoritativa está en
-`service/src/api.rs`. La API `v0.1` puede cambiar.
+La API es la forma en que Mobile, Desktop u otro cliente hablan con el relay.
+Este documento reúne las rutas principales. La definición exacta está en
+`service/src/api.rs` y todavía puede cambiar durante `v0.1`.
 
 ## Resumen
 
-Un cliente se autentica, envía una orden con una clave de idempotencia, recibe
-su aceptación durable y sigue el resultado mediante eventos o consultas.
+El cliente se autentica, manda una orden con una clave única y recibe
+`accepted` cuando el relay termina de guardarla. Desde ahí puede seguir lo que
+ocurre mediante eventos o consultas.
 
 ## Alcance actual
 
-Cada instancia de relay acepta una generación activa de engine. Los clientes
-eligen entre instancias mediante perfiles y endpoints.
+Cada relay trabaja con una generación activa de engine. Para elegir otra Mac,
+el cliente usa otro perfil y otro endpoint.
 
-Una orden de `v0.1` **no** incluye un `hostId` para que una sola central elija
-entre varios engines. La estrella N×M de [Arquitectura](ARCHITECTURE.md) es la
-forma objetivo, no routing multi-host ya implementado.
+Una orden de `v0.1` **no** incluye un `hostId`, así que una sola central todavía
+no puede elegir entre varios engines. La estrella N×M de
+[Arquitectura](ARCHITECTURE.md) es el diseño futuro, no una capacidad ya
+implementada.
 
 ## Autenticación
 
-Cada request a `/api/mobile/*` necesita el header `Authorization` con el valor
+Cada solicitud a `/api/mobile/*` necesita el header `Authorization` con el valor
 `Bearer <client-token>`.
 
 Las respuestas protegidas usan una política privada `no-store`. `/healthz` es
@@ -97,46 +99,47 @@ transformación de prompts y preferencias.
 
 ## Semántica de `accepted`
 
-`accepted` significa que el relay guardó la orden. No significa que Codex la
-terminó.
+`accepted` significa que el relay ya guardó la orden. No significa que Codex
+haya terminado.
 
 El recorrido habitual es:
 
-1. `accepted`: el relay tomó custodia.
-2. `leased`: el engine recibió una lease de la orden.
-3. `engineDurable`: el engine la guardó localmente.
-4. `sentToChild`: la entregó al proceso de Codex.
-5. `completed`: terminó correctamente.
+1. `accepted`: el relay ya tiene la orden.
+2. `leased`: el engine reservó esa orden para procesarla.
+3. `engineDurable`: el engine también la guardó en la Mac.
+4. `sentToChild`: la orden llegó al proceso de Codex.
+5. `completed`: el trabajo terminó correctamente.
 
 El recorrido también puede terminar en `failed`, `cancelled` o `unknown`.
 
-Al reintentar la misma acción del usuario, enviá la misma clave de
-idempotencia. El relay reconoce que se trata de la misma operación. Una clave
-nueva representa otra operación.
+Si reintentás la misma acción, enviá la misma clave de idempotencia. Así el
+relay reconoce la orden y no crea otra. Una clave nueva representa una operación
+nueva.
 
 ## Eventos y reconexión
 
 `GET /api/mobile/stream` emite Server-Sent Events ordenados. Cada evento tiene
-un identificador de secuencia. Un cliente que vuelve envía su cursor en el
-query o mediante `Last-Event-ID`.
+un número de secuencia. Cuando un cliente vuelve, envía el último número que vio
+en el query o mediante `Last-Event-ID`.
 
-Si el historial disponible no alcanza para ese cursor, el cliente debe recargar
-el snapshot autoritativo. No debe interpretar la falta de replay como “no cambió
+Si esa parte de la historia ya no está disponible, el cliente recarga un
+snapshot completo. No debe interpretar la falta de replay como “no cambió
 nada”.
 
-Cada cliente mantiene su cursor. Por eso iPhone y Desktop pueden desconectarse
-en momentos distintos y volver después a la misma historia.
+Cada cliente guarda su propio cursor. Por eso el iPhone y Desktop pueden
+desconectarse en momentos distintos y, al volver, reconstruir la misma historia.
 
 ## Conexión del engine
 
-El engine abre un WebSocket saliente hacia:
+El engine inicia un WebSocket hacia el relay:
 
 ```text
 GET /v1/engine/connect
 ```
 
-Se autentica por separado. La descarga de adjuntos usa tokens opacos de vida
-corta. El cliente nunca usa esta conexión ni habla directamente con el engine.
+Usa un token distinto del cliente. La descarga de adjuntos usa tokens opacos de
+vida corta. Mobile y Desktop nunca usan esta conexión ni hablan directamente
+con el engine.
 
 ## Rutas de compatibilidad
 

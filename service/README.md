@@ -2,22 +2,21 @@
 
 [← Volver al README](../README.md)
 
-Este crate implementa el relay, el engine y la herramienta de diagnóstico.
-Compila tres comandos:
+Este crate contiene las piezas que corren fuera de los clientes. Compila tres
+comandos:
 
-- `fermin-relay`: recibe órdenes, las persiste, emite eventos SSE y mantiene la
-  conexión con el host.
-- `fermin-engine`: vive en cada Mac host. Inicia y observa Codex App Server y lo
-  conecta con la central.
+- `fermin-relay`: recibe órdenes, las guarda, emite eventos SSE y mantiene la
+  conexión con la Mac host.
+- `fermin-engine`: vive junto a Codex en cada Mac host. Inicia Codex App Server,
+  observa su estado y lo conecta con el relay.
 - `ferminctl`: comprueba la instalación local de Codex sin exponer
   diagnósticos irrestrictos.
 
 ## Lo que soporta `v0.1`
 
-Una instancia de `fermin-relay` admite una generación activa de
-`fermin-engine`. La arquitectura objetivo conserva un relay central y engines
-separados por host, pero el routing de varios hosts dentro de una única
-instancia todavía no está implementado.
+Cada instancia de `fermin-relay` trabaja con una generación activa de
+`fermin-engine`. El diseño futuro mantiene un relay central y un engine por
+host, pero un solo relay todavía no puede elegir entre varios hosts.
 
 ## Probar
 
@@ -44,10 +43,10 @@ los valores. El loader rechaza:
 - workspace roots relativos; y
 - una URL engine→relay fuera de loopback sin TLS.
 
-Relay y engine usan bases SQLite separadas en modo WAL. El relay guarda el
-historial y cada host conserva su estado local. Ese diseño corresponde al
-despliegue actual de una persona; no es almacenamiento multi-tenant ni
-horizontalmente escalable.
+Relay y engine usan bases SQLite separadas en modo WAL. El relay guarda la
+historia compartida y cada host conserva su estado local. Está pensado para la
+instalación actual de una persona; no es almacenamiento multi-tenant ni está
+preparado para escalar horizontalmente.
 
 Seguí [Autoalojamiento](../docs/SELF_HOSTING.md) para ejecutar el conjunto.
 

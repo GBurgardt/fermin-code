@@ -29,17 +29,19 @@ agregar un campo `hostId`.
 
 ## Documentación
 
-La documentación usa un tono técnico, neutral y directo.
+La documentación usa un tono claro, directo y natural.
 
-1. Definí el componente o la operación.
-2. Indicá el comportamiento observable.
-3. Documentá requisitos y condiciones.
-4. Documentá límites y estados de falla.
+1. Empezá por la idea más simple.
+2. Definí el componente o la operación con palabras comunes.
+3. Explicá qué ocurre en la práctica.
+4. Documentá requisitos, condiciones y estados de falla.
 5. Separá la implementación actual de la arquitectura objetivo.
 
-Usá “relay durable”, “host” y “engine” cuando aporten precisión y definilos la
-primera vez. Evitá anécdotas, slogans, metáforas, preguntas retóricas, lenguaje
-promocional y afirmaciones sin una condición verificable.
+Usá “relay durable”, “host” y “engine” cuando aporten precisión, pero definilos
+la primera vez y no los uses donde alcanza una palabra común como “guardar”,
+“volver” o “entregar”. Podés hablarle directamente al lector. Evitá slogans,
+metáforas forzadas, lenguaje promocional y afirmaciones sin una condición
+verificable.
 
 ### Escribí también para una pantalla angosta
 
