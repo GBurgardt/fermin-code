@@ -4,10 +4,16 @@
 
 ## La idea
 
-La arquitectura cabe en una línea:
+La arquitectura cabe en cuatro escalones:
 
 ```text
-Clientes → Relay durable → Hosts → Codex
+Clientes
+   ↓
+Relay durable
+   ↓
+Hosts
+   ↓
+Codex
 ```
 
 El cliente expresa una intención. El relay toma custodia. El engine de la Mac

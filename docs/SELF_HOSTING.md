@@ -21,7 +21,13 @@ problema de red.
 ## Lo que vas a montar
 
 ```text
-Mobile / Desktop ──▶ relay local ──▶ engine local ──▶ Codex App Server
+Mobile / Desktop
+       ↓
+Relay local
+       ↓
+Engine local
+       ↓
+Codex App Server
 ```
 
 Al terminar, un cliente podrá mandar una orden al relay local. El relay la

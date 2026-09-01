@@ -22,11 +22,8 @@ forma objetivo, no routing multi-host ya implementado.
 
 ## Autenticación
 
-Cada request a `/api/mobile/*` necesita el token de cliente:
-
-```http
-Authorization: Bearer <client-token>
-```
+Cada request a `/api/mobile/*` necesita el header `Authorization` con el valor
+`Bearer <client-token>`.
 
 Las respuestas protegidas usan una política privada `no-store`. `/healthz` es
 público y devuelve sólo disponibilidad acotada.
