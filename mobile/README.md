@@ -1,8 +1,14 @@
 # Cliente Mobile de Fermín
 
+[← Volver al README](../README.md)
+
 Es el cliente nativo SwiftUI para iOS. Permite mandar una intención desde el
 iPhone y dejar que la central se ocupe del transporte. Se conecta únicamente al
 relay; nunca necesita una conexión directa con la Mac host.
+
+[![Fermín Mobile mostrando varias sesiones activas](../docs/images/en/mobile/mobile-many-sessions.png)](../docs/images/en/mobile/mobile-many-sessions.png)
+
+<sub>Tocá la captura para verla en resolución completa.</sub>
 
 El proyecto y scheme de Xcode conservan el nombre interno anterior `KyCode` y
 la app mantiene identificadores Fermín Code por compatibilidad. El nombre
@@ -43,3 +49,5 @@ Las funciones opcionales de voz, narración y compartir pueden leer
 Una app iOS no puede esconder de forma segura un secreto compartido de larga
 duración. No distribuyas credenciales de proveedores en una build pública;
 colocá ese intercambio detrás de un backend controlado por vos.
+
+[Conectar relay, engine y clientes paso a paso →](../docs/SELF_HOSTING.md)

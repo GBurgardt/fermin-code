@@ -17,6 +17,12 @@ Explicá primero el problema cotidiano y el recorrido de una orden; introducí
 después la precisión técnica. Preferí ejemplos fáciles de repetir. Evitá
 marketing vacío, tono corporativo, abstracciones innecesarias y promesas.
 
+La documentación pública es mobile-first. El README debe entenderse a 390 px
+sin zoom ni scroll horizontal. Preferí listas apiladas antes que tablas anchas,
+diagramas verticales antes que ASCII horizontal y bloques desplegables para
+material secundario. Cada imagen informativa necesita texto alternativo, una
+explicación cercana y un enlace a la resolución completa.
+
 La definición base es: “Fermín es una central durable que toma custodia de tus
 órdenes y las hace llegar al host correcto”. La frase de experiencia es:
 “Mandás una orden y dejás de vigilar el transporte”.
