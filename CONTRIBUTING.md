@@ -27,24 +27,19 @@ por instancia de relay. Una propuesta de routing multi-host debe incluir
 identidad, autorización, almacenamiento y fencing por host; no alcanza con
 agregar un campo `hostId`.
 
-## Escribí como se explica Fermín
+## Documentación
 
-La documentación debe poder repetirse en voz alta sin traducirla mentalmente.
+La documentación usa un tono técnico, neutral y directo.
 
-1. Empezá por el problema cotidiano.
-2. Decí qué pieza se hace responsable.
-3. Mostrá el recorrido con un ejemplo concreto.
-4. Separá lo que existe de lo que todavía es arquitectura objetivo.
-5. Recién después introducí el término técnico.
+1. Definí el componente o la operación.
+2. Indicá el comportamiento observable.
+3. Documentá requisitos y condiciones.
+4. Documentá límites y estados de falla.
+5. Separá la implementación actual de la arquitectura objetivo.
 
-Preferí “el relay guarda la orden y la deriva al host correcto” antes que una
-cadena de abstracciones. Usá “relay durable”, “host” y “engine” cuando aporten
-precisión; explicalos la primera vez. Evitá marketing vacío, promesas, tono
-corporativo y complejidad que no ayude a ejecutar o comprender.
-
-La frase guía es:
-
-> Mandás una orden y dejás de vigilar el transporte.
+Usá “relay durable”, “host” y “engine” cuando aporten precisión y definilos la
+primera vez. Evitá anécdotas, slogans, metáforas, preguntas retóricas, lenguaje
+promocional y afirmaciones sin una condición verificable.
 
 ### Escribí también para una pantalla angosta
 

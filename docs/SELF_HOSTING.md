@@ -2,8 +2,8 @@
 
 [← Documentación](README.md)
 
-Esta guía monta la forma más corta de Fermín: una Mac funciona como central y
-como host al mismo tiempo. Relay, engine y Codex viven juntos.
+Esta guía configura la topología local mínima: una Mac ejecuta el relay, el
+engine y Codex.
 
 No instala servicios de fondo, no crea un dominio público y no configura firma
 de Apple.
@@ -14,11 +14,11 @@ Necesitás una Mac con Rust 1.92 o posterior, Xcode Command Line Tools y un Code
 CLI compatible ya autenticado. Xcode completo y XcodeGen sólo son necesarios
 si también vas a generar Mobile.
 
-La guía tiene ocho pasos. Primero deja funcionando el camino local. El acceso
-remoto aparece al final, cuando ya podés separar un problema de Fermín de un
-problema de red.
+La guía tiene ocho pasos. Primero verifica el funcionamiento local. El acceso
+remoto se configura al final para separar los problemas del servicio de los
+problemas de red.
 
-## Lo que vas a montar
+## Topología resultante
 
 ```text
 Mobile / Desktop
@@ -79,7 +79,7 @@ chmod 600 "$HOME/Library/Application Support/FerminCode/secrets/"*-token
 Los archivos de configuración guardan rutas a tokens, no sus valores. No pegues
 un token en TOML, logs, historial del shell ni Git.
 
-## 3. Iniciar la central
+## 3. Iniciar el relay
 
 Prepará `service/config/relay.toml`:
 
@@ -119,8 +119,7 @@ service/target/release/fermin-engine \
   --config service/config/engine.toml
 ```
 
-Consultá `/healthz` otra vez. Debe mostrar un engine conectado y listo. La
-central ya tiene un host capaz de continuar las órdenes.
+Consultá `/healthz` otra vez. Debe mostrar un engine conectado y listo.
 
 ## 5. Conectar Desktop
 
@@ -190,8 +189,8 @@ Antes de llamar terminada a la instalación, verificá estas cuatro cosas:
 - una orden aparece en Codex y devuelve eventos; y
 - cerrar y volver a abrir el cliente recupera la historia.
 
-La prueba local confirma el producto. El túnel o proxy confirma sólo el acceso
-remoto.
+La prueba local verifica el relay, el engine y Codex. El túnel o proxy verifica
+el acceso remoto.
 
 ---
 

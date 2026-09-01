@@ -2,8 +2,8 @@
 
 [← Volver al README](../README.md)
 
-Es el cliente nativo SwiftUI para macOS. Es una ventana sobre la central: se
-conecta únicamente al relay y nunca habla directamente con un engine.
+Es el cliente nativo SwiftUI para macOS. Se conecta al relay y no se conecta
+directamente con un engine.
 
 Hace cuatro cosas:
 
@@ -12,12 +12,12 @@ Hace cuatro cosas:
 - guarda tokens de cliente en Keychain; y
 - combina dos perfiles opcionales en una sola vista.
 
-No inicia Codex, no ejecuta el engine y no expone un servidor HTTP local. El
-trabajo continúa en la Mac host aunque cierres este cliente.
+No inicia Codex, no ejecuta el engine y no expone un servidor HTTP local.
+Cerrar el cliente no detiene el trabajo que ya se ejecuta en la Mac host.
 
 [![Fermín Desktop mostrando sesiones remotas](../docs/images/en/desktop/desktop-main.png)](../docs/images/en/desktop/desktop-main.png)
 
-<sub>Tocá la captura para verla en resolución completa.</sub>
+<sub>La imagen se puede abrir en resolución completa.</sub>
 
 El target y algunos identificadores siguen usando el nombre interno Fermín Code
 por compatibilidad. El nombre público del producto es Fermín; este cambio

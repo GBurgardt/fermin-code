@@ -2,13 +2,13 @@
 
 [← Volver al README](../README.md)
 
-Es el cliente nativo SwiftUI para iOS. Permite mandar una intención desde el
-iPhone y dejar que la central se ocupe del transporte. Se conecta únicamente al
-relay; nunca necesita una conexión directa con la Mac host.
+Es el cliente nativo SwiftUI para iOS. Envía órdenes al relay y recibe eventos
+de las sesiones remotas. No se conecta directamente con la Mac host ni con el
+engine.
 
 [![Fermín Mobile mostrando varias sesiones activas](../docs/images/en/mobile/mobile-many-sessions.png)](../docs/images/en/mobile/mobile-many-sessions.png)
 
-<sub>Tocá la captura para verla en resolución completa.</sub>
+<sub>La imagen se puede abrir en resolución completa.</sub>
 
 El proyecto y scheme de Xcode conservan el nombre interno anterior `KyCode` y
 la app mantiene identificadores Fermín Code por compatibilidad. El nombre
@@ -35,9 +35,9 @@ sólo para descubrimiento y pruebas en una red controlada.
 
 ## Las claves de proveedores son opcionales
 
-El chat principal usa la sesión de Codex en la Mac del engine. El iPhone expresa
-la intención; el host ejecuta. Por eso no necesita una clave de OpenAI u otro
-proveedor dentro del bundle de iOS.
+El chat principal usa la sesión de Codex en la Mac del engine. El cliente envía
+la orden y el host la ejecuta. Esta operación no requiere una clave de OpenAI u
+otro proveedor dentro del bundle de iOS.
 
 Las funciones opcionales de voz, narración y compartir pueden leer
 `Resources/App/Secrets.plist`. Para probar alguna:
