@@ -1,5 +1,7 @@
 # Código de conducta
 
+[← Volver al README](README.md)
+
 ## Nuestro compromiso
 
 Nos comprometemos a que participar en este proyecto sea una experiencia libre

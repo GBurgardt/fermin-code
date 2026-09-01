@@ -1,5 +1,7 @@
 # Cómo explicar Fermín
 
+[← Documentación](README.md)
+
 Este archivo fija el lenguaje público del proyecto. No es una hoja de ruta ni
 un calendario. Sirve para explicar Fermín de forma simple, concreta y honesta.
 
@@ -14,7 +16,13 @@ la misma central. El relay las guarda, identifica su destino, las deriva al host
 correcto y conserva la historia de lo ocurrido.
 
 ```text
-Mis clientes → Relay durable → Mis hosts → Codex
+Clientes
+   ↓
+Relay durable
+   ↓
+Hosts
+   ↓
+Codex
 ```
 
 > **Mandás una orden y dejás de vigilar el transporte.**
@@ -101,11 +109,15 @@ Todavía falta evidencia independiente de una instalación completa siguiendo la
 guía en una tercera Mac limpia. No lo presentes como “un clic” ni como una
 experiencia terminada para usuarios no técnicos.
 
-## Primer anuncio: X
+## Comunicación pública
+
+Los borradores quedan plegados para que este documento siga siendo fácil de
+leer desde el teléfono. Abrí sólo el canal que vayas a usar.
+
+<details>
+<summary><strong>Primer anuncio: X</strong></summary>
 
 X permite contar el origen personal y apuntar directo al código.
-
-Borrador:
 
 > Publiqué Fermín.
 >
@@ -126,7 +138,10 @@ Seguimiento técnico opcional:
 > cursor y quita autoridad a conexiones viejas. Codex sigue razonando y
 > ejecutando; Fermín hace confiable el camino remoto.
 
-## Show HN
+</details>
+
+<details>
+<summary><strong>Show HN</strong></summary>
 
 Las [reglas de Hacker News](https://news.ycombinator.com/newsguidelines.html)
 piden no publicar texto generado o editado por IA. El autor debe escribir la
@@ -144,7 +159,10 @@ Un post factual puede cubrir:
 Usá un título sencillo `Show HN:`, enlazá el repositorio y no pidas votos ni
 comentarios coordinados.
 
-## Product Hunt
+</details>
+
+<details>
+<summary><strong>Product Hunt</strong></summary>
 
 La [guía oficial de Product Hunt](https://help.producthunt.com/en/articles/479557-how-to-post-a-product)
 pide URL de producto, descripción, galería y material de lanzamiento; también
@@ -155,6 +173,12 @@ Decisión pragmática: **no usar Product Hunt para esta release**. Sólo tendrí
 sentido reevaluarlo cuando el producto real sea fácil de instalar y demostrar.
 Esa condición no es un compromiso de construirlo.
 
+</details>
+
 No afirmes cero configuración, wake garantizado, aislamiento multiusuario,
 cifrado de extremo a extremo, disponibilidad alojada ni routing multi-host en
 un único relay hasta que el sistema pueda demostrarlo.
+
+---
+
+[← Documentación](README.md) · [Volver al repositorio →](../README.md)

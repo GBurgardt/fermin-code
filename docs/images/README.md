@@ -1,55 +1,75 @@
 # Imágenes públicas
 
+[← Documentación](../README.md)
+
+Las imágenes del repositorio usan contenido neutro. No contienen tokens,
+endpoints privados, rutas personales, identificadores reales ni conversaciones
+del despliegue original.
+
 ## Arquitectura
 
-| Imagen | Uso | Origen |
-| --- | --- | --- |
-| `architecture/relay-star-platform.png` | Una central durable conecta N clientes con M hosts | Generada y ajustada con Imagegen integrado; revisada visualmente |
+Hay dos formatos del mismo concepto:
 
-La ilustración de arquitectura es sintética. Usa fondo opaco y contenido
-genérico. No contiene capturas, rutas, sesiones, hostnames ni identificadores
-reales. Muestra conexiones cliente↔relay y engine↔relay; deliberadamente no
-dibuja conexiones directas cliente→engine.
+- `architecture/relay-star-platform.png` — composición horizontal para una
+  pantalla amplia.
+- `architecture/relay-star-mobile.svg` — composición vertical, texto grande y
+  líneas simples para una pantalla angosta.
 
-## Capturas de producto
+El README usa `<picture>` para elegir el formato según el ancho disponible. El
+SVG conserva texto exacto, escala sin perder nitidez y ofrece título y
+descripción accesibles. Cada diagrama también funciona como enlace a su archivo
+completo.
 
-| Vista | Referencia local privada | Imagen pública en inglés |
-| --- | --- | --- |
-| Conversación Mobile | `originals/mobile/IMG_4874.PNG` | `en/mobile/mobile-conversation.png` |
-| Lista Mobile | `originals/mobile/IMG_4875.PNG` | `en/mobile/mobile-sessions.png` |
-| Carga activa Mobile | `originals/mobile/mobile-many-sessions.png` | `en/mobile/mobile-many-sessions.png` |
-| Lista Desktop | `originals/desktop/desktop-live-main.png` | `en/desktop/desktop-main.png` |
-| Conversación Desktop | `originals/desktop/desktop-conversation.png` | `en/desktop/desktop-conversation.png` |
+Ambos muestran conexiones cliente↔relay y engine↔relay. Deliberadamente no
+muestran conexiones directas cliente→engine. El formato mobile aclara además
+que la estrella es la forma objetivo y que `v0.1` usa un relay por host.
 
-Los archivos bajo `originals/` están ignorados y no forman parte de Git. Las
-referencias Mobile fueron aportadas por el propietario. Las de Desktop se
-obtuvieron de la app de desarrollo.
+La ilustración horizontal fue generada y ajustada con Imagegen integrado. El
+SVG vertical fue construido como vector nativo y revisado en un viewport de
+iPhone.
 
-## Por qué las capturas públicas son demostraciones
+## Capturas Mobile
+
+- `en/mobile/mobile-conversation.png` — una conversación.
+- `en/mobile/mobile-sessions.png` — la lista de sesiones.
+- `en/mobile/mobile-many-sessions.png` — varias sesiones trabajando.
+
+Las referencias originales fueron aportadas por el propietario. La captura
+principal del README aparece sola y ocupa el ancho disponible. Las vistas
+secundarias quedan dentro de bloques desplegables para no convertir la lectura
+mobile en una galería interminable.
+
+## Capturas Desktop
+
+- `en/desktop/desktop-main.png` — lista de sesiones.
+- `en/desktop/desktop-conversation.png` — una conversación.
+
+Las referencias se obtuvieron de la app de desarrollo. En el README, Desktop
+queda detrás de un bloque desplegable y cada captura se puede tocar para abrir
+la resolución completa.
+
+## Por qué son demostraciones
 
 Los originales contenían títulos de sesiones, fragmentos de conversaciones,
 rutas y un identificador real. Traducir sólo el idioma habría conservado datos
 operativos privados.
 
-Por eso se regeneraron desde las referencias privadas. Mantienen la dirección
-visual oscura y una disposición representativa, pero usan contenido neutro en
-inglés. Son ilustraciones del producto, no evidencia píxel por píxel de una
-sesión real.
+Por eso las versiones públicas se regeneraron desde las referencias. Mantienen
+la dirección visual y una disposición representativa, pero usan contenido
+neutro en inglés. Son demostraciones del producto, no evidencia píxel por píxel
+de una sesión real.
 
-Durante la revisión de identidad pública, Imagegen integrado reemplazó
-únicamente las etiquetas visibles `Fermín Engine` por `Fermín` en las cuatro
-capturas que las contenían. También volvió más directa la redacción del diagrama
-sin cambiar su topología. Se revisaron composición, dimensiones y contenido
-después de cada edición. La captura de conversación Mobile conserva `FERMÍN`
-porque identifica al participante.
+Durante la revisión de identidad pública, Imagegen integrado reemplazó sólo las
+etiquetas visibles `Fermín Engine` por `Fermín` en las capturas que las
+contenían. La captura de conversación Mobile conserva `FERMÍN` porque identifica
+al participante.
 
-Tamaños:
+## Dimensiones
 
-- conversación Mobile: 853 × 1844;
-- carga activa Mobile: 853 × 1844;
-- lista Mobile: 852 × 1846;
-- imágenes Desktop: 1587 × 991; y
-- arquitectura: 1672 × 941.
+- Mobile: aproximadamente 853 × 1844 píxeles.
+- Desktop: 1587 × 991 píxeles.
+- Arquitectura horizontal: 1672 × 941 píxeles.
+- Arquitectura mobile: SVG con proporción 720 × 1240.
 
 Antes de publicar se revisaron credenciales, endpoints, rutas personales,
 identificadores de sesión y metadata.

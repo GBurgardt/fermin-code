@@ -1,5 +1,7 @@
 # Service: la central y los hosts
 
+[← Volver al README](../README.md)
+
 Este crate contiene el camino durable entre los clientes y Codex. Compila tres
 comandos:
 
@@ -48,3 +50,6 @@ despliegue actual de una persona; no es almacenamiento multi-tenant ni
 horizontalmente escalable.
 
 Seguí [Autoalojamiento](../docs/SELF_HOSTING.md) para ejecutar el conjunto.
+
+Para entender por qué relay y engine son piezas distintas, leé
+[Arquitectura](../docs/ARCHITECTURE.md).

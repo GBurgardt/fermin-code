@@ -1,5 +1,7 @@
 # Política de seguridad
 
+[← Volver al README](README.md)
+
 ## Código soportado
 
 El trabajo de seguridad se aplica a la rama `main` y al último release. Los

@@ -13,6 +13,7 @@
 - [ ] Mobile: proyecto generado y build de simulador sin firma (si corresponde)
 - [ ] Sin secretos, endpoints de producción, identidades de firma ni rutas personales
 - [ ] Documentación y notas de compatibilidad actualizadas
+- [ ] README y docs revisados a 390 px si cambia contenido público o visual
 - [ ] No presenta la arquitectura N×M objetivo como una capacidad ya implementada
 - [ ] El texto explica primero el problema y después el mecanismo
 

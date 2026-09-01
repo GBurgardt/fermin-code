@@ -1,5 +1,7 @@
 # Cómo contribuir
 
+[← Volver al README](README.md)
+
 ## Elegí la superficie correcta
 
 - Abrí un issue antes de cambiar comportamiento o arquitectura.
@@ -44,6 +46,15 @@ La frase guía es:
 
 > Mandás una orden y dejás de vigilar el transporte.
 
+### Escribí también para una pantalla angosta
+
+- Comprobá el documento a 390 px de ancho.
+- Evitá tablas y diagramas que obliguen a desplazarse de costado.
+- Mostrá primero la conclusión; plegá material secundario cuando sea largo.
+- Usá texto alternativo y enlazá cada imagen a su resolución completa.
+- Si agregás un video, acompañalo con una explicación textual y una imagen de
+  portada que funcione como enlace.
+
 ## No publiques datos privados
 
 No confirmes:
@@ -68,6 +79,8 @@ texto de demostración.
 
 Para cambios de Mobile, compilá o probá además un target de simulador sin firma.
 Para UI, adjuntá evidencia anterior y posterior sin conversaciones reales.
+Para documentación visual, adjuntá también una revisión desde un viewport de
+iPhone.
 
 ## Escribí un pull request útil
 

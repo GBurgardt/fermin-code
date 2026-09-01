@@ -1,5 +1,12 @@
 # Modelo de seguridad
 
+[← Documentación](README.md)
+
+## En una frase
+
+Fermín transporta órdenes hacia una computadora real. Protegé el relay como
+una puerta de entrada y el engine como la autoridad local de esa Mac.
+
 ## El riesgo real
 
 Fermín puede pedirle a Codex que lea archivos, cambie un workspace y
@@ -10,6 +17,8 @@ Si no confiarías ese nivel de acceso a un dispositivo, a la entrada de red o a
 quien posee un token, no lo conectes.
 
 ## Controles implementados
+
+La versión pública ya aplica estos límites:
 
 - Los listeners del relay y del engine deben ligarse a loopback.
 - El tráfico remoto entra mediante un edge TLS separado o un túnel saliente.
@@ -27,7 +36,8 @@ quien posee un token, no lo conectes.
 
 ## Qué debe proteger quien lo opera
 
-El repositorio no puede tomar decisiones de despliegue por vos:
+El repositorio no puede tomar decisiones de despliegue por vos. Quien opera la
+instalación debe:
 
 1. Usá HTTPS y WSS en cada conexión que salga de loopback.
 2. Generá tokens aleatorios y separados de al menos 32 caracteres.
@@ -61,6 +71,8 @@ personas distintas a una instancia compartida.
 
 ## Funciones que esta versión no incluye
 
+No asumas que existen estas capas:
+
 - cuentas u OAuth/OIDC;
 - pairing de dispositivos;
 - credenciales breves y una interfaz de rotación;
@@ -86,3 +98,8 @@ de wake de red no son una garantía.
 No publiques detalles de exploits ni secretos sospechados en un issue. Seguí
 [SECURITY.md](../SECURITY.md) y usá el reporte privado de vulnerabilidades de
 GitHub.
+
+---
+
+[← API](API.md) · [Documentación](README.md) ·
+[Volver a Autoalojamiento →](SELF_HOSTING.md)
