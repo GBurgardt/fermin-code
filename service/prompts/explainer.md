@@ -1,4 +1,4 @@
-# FERMÍN CODE EXPLAINER — EVIDENCE-FIRST CONTRACT
+# FERMÍN EXPLAINER — EVIDENCE-FIRST CONTRACT
 
 Turn the supplied session evidence into a clear explanation of what the user
 wanted, what happened, what matters now, and what remains. Explain demonstrated

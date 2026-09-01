@@ -1,15 +1,19 @@
-## Problem
+# Pull request
 
-## Why this component owns it
+## Problema
 
-## Changes
+## Por qué corresponde a este componente
 
-## Verification
+## Cambios
 
-- [ ] Service: `cargo fmt --check && cargo test --locked` (if applicable)
-- [ ] Desktop: `swift test` (if applicable)
-- [ ] Mobile: generated project and unsigned simulator build (if applicable)
-- [ ] No secrets, production endpoints, signing identities, or personal paths
-- [ ] Documentation and compatibility notes updated
+## Verificación
 
-## Security, migration, and rollback
+- [ ] Service: `cargo fmt --check && cargo test --locked` (si corresponde)
+- [ ] Desktop: `swift test` (si corresponde)
+- [ ] Mobile: proyecto generado y build de simulador sin firma (si corresponde)
+- [ ] Sin secretos, endpoints de producción, identidades de firma ni rutas personales
+- [ ] Documentación y notas de compatibilidad actualizadas
+- [ ] No presenta la arquitectura N×M objetivo como una capacidad ya implementada
+- [ ] El texto explica primero el problema y después el mecanismo
+
+## Seguridad, migración y rollback

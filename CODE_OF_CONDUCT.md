@@ -1,50 +1,46 @@
-# Contributor Covenant Code of Conduct
+# Código de conducta
 
-## Our pledge
+## Nuestro compromiso
 
-We pledge to make participation in this project a harassment-free experience
-for everyone, regardless of age, body size, disability, ethnicity, sex
-characteristics, gender identity and expression, level of experience,
-education, socioeconomic status, nationality, personal appearance, race,
-caste, color, religion, or sexual identity and orientation.
+Nos comprometemos a que participar en este proyecto sea una experiencia libre
+de acoso para todas las personas, sin importar edad, tamaño corporal,
+discapacidad, etnia, características sexuales, identidad y expresión de género,
+experiencia, educación, nivel socioeconómico, nacionalidad, apariencia, raza,
+casta, color, religión, identidad u orientación sexual.
 
-We pledge to act and interact in ways that contribute to an open, welcoming,
-diverse, inclusive, and healthy community.
+Buscamos una comunidad abierta, amable, diversa, inclusiva y saludable.
 
-## Our standards
+## Conductas esperadas
 
-Examples of behavior that contributes to a positive environment include
-demonstrating empathy, respecting differing opinions, giving and accepting
-constructive feedback, taking responsibility for mistakes, and focusing on
-what is best for the community.
+Contribuyen a un ambiente positivo: actuar con empatía, respetar opiniones
+distintas, dar y recibir comentarios constructivos, asumir errores y priorizar
+lo mejor para la comunidad.
 
-Unacceptable behavior includes sexualized language or attention, trolling or
-insulting comments, public or private harassment, publishing another person's
-private information without permission, and other conduct that could
-reasonably be considered inappropriate in a professional setting.
+No se acepta lenguaje o atención sexualizada, trolling, insultos, acoso público
+o privado, publicación de información privada sin permiso ni otra conducta
+impropia de un entorno profesional.
 
-## Enforcement responsibilities
+## Responsabilidad de mantenimiento
 
-Project maintainers are responsible for clarifying and enforcing acceptable
-behavior. They may remove, edit, or reject comments, commits, code, issues, and
-other contributions that are not aligned with this Code of Conduct, and will
-communicate moderation reasons when appropriate.
+Quienes mantienen el proyecto aclaran y hacen cumplir estas normas. Pueden
+eliminar, editar o rechazar comentarios, commits, código, issues y otras
+contribuciones incompatibles con este documento, explicando la moderación
+cuando corresponda.
 
-## Scope
+## Alcance
 
-This Code applies in project spaces and when an individual officially
-represents the project in public spaces.
+Este código rige en los espacios del proyecto y cuando una persona lo representa
+oficialmente en público.
 
-## Enforcement
+## Aplicación
 
-Report abusive, harassing, or otherwise unacceptable behavior privately to the
-maintainers through the repository's security contact. Complaints will be
-reviewed promptly and fairly. Maintainers will respect the reporter's privacy
-and security.
+Reportá conductas abusivas o inaceptables en privado mediante el contacto de
+seguridad del repositorio. Las quejas se revisarán de forma justa y se
+protegerán la privacidad y seguridad de quien reporte.
 
-Enforcement may range from a private correction or warning to temporary or
-permanent exclusion, depending on impact and repeated behavior.
+Según el impacto y la repetición, las medidas pueden ir desde una corrección o
+advertencia privada hasta una exclusión temporal o permanente.
 
-## Attribution
+## Origen
 
-This Code is adapted from the [Contributor Covenant, version 2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct.html).
+Adaptado del [Contributor Covenant, versión 2.1](https://www.contributor-covenant.org/version/2/1/code_of_conduct.html).

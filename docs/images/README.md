@@ -1,37 +1,55 @@
-# Public images
+# Imágenes públicas
 
-## What is tracked
+## Arquitectura
 
-| View | Private local reference | Public English image |
-|---|---|---|
-| Mobile conversation | `originals/mobile/IMG_4874.PNG` | `en/mobile/mobile-conversation.png` |
-| Mobile session list | `originals/mobile/IMG_4875.PNG` | `en/mobile/mobile-sessions.png` |
-| Mobile active workload | `originals/mobile/mobile-many-sessions.png` | `en/mobile/mobile-many-sessions.png` |
-| Desktop session list | `originals/desktop/desktop-live-main.png` | `en/desktop/desktop-main.png` |
-| Desktop conversation | `originals/desktop/desktop-conversation.png` | `en/desktop/desktop-conversation.png` |
+| Imagen | Uso | Origen |
+| --- | --- | --- |
+| `architecture/relay-star-platform.png` | Una central durable conecta N clientes con M hosts | Generada y ajustada con Imagegen integrado; revisada visualmente |
 
-The files below `originals/` are ignored and are not part of the public Git
-repository. Mobile references came from the project owner. Desktop references
-came from the running development app.
+La ilustración de arquitectura es sintética. Usa fondo opaco y contenido
+genérico. No contiene capturas, rutas, sesiones, hostnames ni identificadores
+reales. Muestra conexiones cliente↔relay y engine↔relay; deliberadamente no
+dibuja conexiones directas cliente→engine.
 
-## Why the public images are generated demos
+## Capturas de producto
 
-The original screenshots contained real session titles, conversation
-fragments, paths, and one session identifier. Editing only the language would
-have kept private operational data in the image and in Git history.
+| Vista | Referencia local privada | Imagen pública en inglés |
+| --- | --- | --- |
+| Conversación Mobile | `originals/mobile/IMG_4874.PNG` | `en/mobile/mobile-conversation.png` |
+| Lista Mobile | `originals/mobile/IMG_4875.PNG` | `en/mobile/mobile-sessions.png` |
+| Carga activa Mobile | `originals/mobile/mobile-many-sessions.png` | `en/mobile/mobile-many-sessions.png` |
+| Lista Desktop | `originals/desktop/desktop-live-main.png` | `en/desktop/desktop-main.png` |
+| Conversación Desktop | `originals/desktop/desktop-conversation.png` | `en/desktop/desktop-conversation.png` |
 
-The public images were therefore regenerated from the private references. They
-keep the product's dark visual direction and representative layouts, but use
-neutral English demo content. Treat them as product illustrations, not as
-pixel-exact evidence of a live session.
+Los archivos bajo `originals/` están ignorados y no forman parte de Git. Las
+referencias Mobile fueron aportadas por el propietario. Las de Desktop se
+obtuvieron de la app de desarrollo.
 
-Current sizes:
+## Por qué las capturas públicas son demostraciones
 
-- Mobile conversation: 853 × 1844
-- Mobile active workload: 853 × 1844
-- Mobile session list: 852 × 1846
-- Desktop images: 1587 × 991
+Los originales contenían títulos de sesiones, fragmentos de conversaciones,
+rutas y un identificador real. Traducir sólo el idioma habría conservado datos
+operativos privados.
 
-Only the five reviewed English files are embedded in the root README. Before
-publication they were checked for credentials, production endpoints, personal
-paths, session identifiers, and image metadata.
+Por eso se regeneraron desde las referencias privadas. Mantienen la dirección
+visual oscura y una disposición representativa, pero usan contenido neutro en
+inglés. Son ilustraciones del producto, no evidencia píxel por píxel de una
+sesión real.
+
+Durante la revisión de identidad pública, Imagegen integrado reemplazó
+únicamente las etiquetas visibles `Fermín Engine` por `Fermín` en las cuatro
+capturas que las contenían. También volvió más directa la redacción del diagrama
+sin cambiar su topología. Se revisaron composición, dimensiones y contenido
+después de cada edición. La captura de conversación Mobile conserva `FERMÍN`
+porque identifica al participante.
+
+Tamaños:
+
+- conversación Mobile: 853 × 1844;
+- carga activa Mobile: 853 × 1844;
+- lista Mobile: 852 × 1846;
+- imágenes Desktop: 1587 × 991; y
+- arquitectura: 1672 × 941.
+
+Antes de publicar se revisaron credenciales, endpoints, rutas personales,
+identificadores de sesión y metadata.

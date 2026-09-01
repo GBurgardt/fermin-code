@@ -1,42 +1,47 @@
-# Fermín Code Desktop
+# Cliente Desktop de Fermín
 
-This is the native SwiftUI macOS client for a Fermín relay.
+Es el cliente nativo SwiftUI para macOS. Es una ventana sobre la central: se
+conecta únicamente al relay y nunca habla directamente con un engine.
 
-It does:
+Hace cuatro cosas:
 
-- call the relay through REST;
-- receive live updates through SSE;
-- store client tokens in Keychain; and
-- combine two optional host profiles in one view.
+- llama al relay mediante REST;
+- recibe eventos en vivo mediante SSE;
+- guarda tokens de cliente en Keychain; y
+- combina dos perfiles opcionales en una sola vista.
 
-It does **not** start Codex, run the Fermín engine, or expose a local HTTP
-server.
+No inicia Codex, no ejecuta el engine y no expone un servidor HTTP local. El
+trabajo continúa en la Mac host aunque cierres este cliente.
 
-## Test and run
+El target y algunos identificadores siguen usando el nombre interno Fermín Code
+por compatibilidad. El nombre público del producto es Fermín; este cambio
+documental no renombra código ni bundles operativos.
+
+## Probar y ejecutar
 
 ```bash
 swift test
 FERMIN_CODE_PRIMARY_RELAY_URL=http://127.0.0.1:8840 swift run FerminCode
 ```
 
-Plain HTTP is valid only for loopback development. Use HTTPS for a remote
-relay.
+HTTP plano sólo es válido en loopback durante desarrollo. Usá HTTPS para un
+relay remoto.
 
-## Generate the Xcode app
+## Generar la app de Xcode
 
 ```bash
 xcodegen generate
 open FerminCodeDesktop.xcodeproj
 ```
 
-Set these values for your deployment:
+Configurá:
 
 - `FERMIN_CODE_PRIMARY_RELAY_URL`
 - `FERMIN_CODE_SECONDARY_RELAY_URL`
 
-Environment variables with the same names override the Info.plist values in
-development and tests.
+En desarrollo y pruebas, variables de entorno con los mismos nombres
+sobrescriben Info.plist.
 
-The committed project points to `relay.example.com`, which is intentionally
-non-operational. Select your own Apple signing team. The repository contains
-no production endpoint, team ID, or credential.
+El proyecto apunta a `relay.example.com`, que es deliberadamente inoperante.
+Elegí tu propio equipo de firma. El repositorio no contiene endpoints de
+producción, team IDs ni credenciales.

@@ -1,36 +1,64 @@
-# Contributing
+# Cómo contribuir
 
-## Choose the right place
+## Elegí la superficie correcta
 
-- Open an issue before a behavior change or architecture change.
-- A small bug fix, test fix, or documentation correction can go directly to a
+- Abrí un issue antes de cambiar comportamiento o arquitectura.
+- Un bug pequeño, una prueba o una corrección documental puede ir directo a un
   pull request.
-- Report a vulnerability through [SECURITY.md](SECURITY.md), never through a
-  public issue.
+- Reportá vulnerabilidades mediante [SECURITY.md](SECURITY.md), nunca en un
+  issue público.
 
-Keep the product boundary intact:
+Conservá la frontera del producto:
 
-- `service/` owns durability, routing, relay/engine transport, and the Codex
-  App Server adapter.
-- `desktop/` and `mobile/` are relay clients.
-- Codex is the harness. Do not rebuild its model runtime or tool system inside
-  the relay.
+- `service/` contiene durabilidad, relay/engine, transporte y el adaptador de
+  Codex App Server.
+- `desktop/` y `mobile/` son clientes del relay.
+- Codex es el harness. No reconstruyas su runtime de modelos ni sus
+  herramientas dentro del relay.
+- Los clientes no deben conectarse directamente al engine.
 
-## Keep private data out
+## Estado actual y arquitectura objetivo
 
-Do not commit:
+Fermín se describe como una estrella N×M: clientes alrededor de un relay
+central y engines en las Macs. `v0.1` admite una generación activa de engine
+por instancia de relay. Una propuesta de routing multi-host debe incluir
+identidad, autorización, almacenamiento y fencing por host; no alcanza con
+agregar un campo `hostId`.
 
-- real domains or production endpoints;
-- tokens or `.env` files;
-- certificates, provisioning profiles, or signing teams;
-- personal paths or session content;
-- SQLite state or logs; or
-- generated Xcode projects.
+## Escribí como se explica Fermín
 
-Use neutral fixtures such as `relay.example.com`, `/Users/example/projects`,
-and non-personal demo text.
+La documentación debe poder repetirse en voz alta sin traducirla mentalmente.
 
-## Verify the component you changed
+1. Empezá por el problema cotidiano.
+2. Decí qué pieza se hace responsable.
+3. Mostrá el recorrido con un ejemplo concreto.
+4. Separá lo que existe de lo que todavía es arquitectura objetivo.
+5. Recién después introducí el término técnico.
+
+Preferí “el relay guarda la orden y la deriva al host correcto” antes que una
+cadena de abstracciones. Usá “relay durable”, “host” y “engine” cuando aporten
+precisión; explicalos la primera vez. Evitá marketing vacío, promesas, tono
+corporativo y complejidad que no ayude a ejecutar o comprender.
+
+La frase guía es:
+
+> Mandás una orden y dejás de vigilar el transporte.
+
+## No publiques datos privados
+
+No confirmes:
+
+- dominios reales ni endpoints de producción;
+- tokens ni archivos `.env`;
+- certificados, provisioning profiles o equipos de firma;
+- rutas personales ni contenido de sesiones;
+- estado SQLite o logs; ni
+- proyectos de Xcode generados.
+
+Usá fixtures neutros como `relay.example.com`, `/Users/example/projects` y
+texto de demostración.
+
+## Verificá el componente modificado
 
 ```bash
 (cd service && cargo fmt --check && cargo test --locked)
@@ -38,19 +66,18 @@ and non-personal demo text.
 (cd mobile && xcodegen generate)
 ```
 
-For Mobile behavior, also build or test an unsigned simulator target in Xcode.
-For UI work, attach before-and-after evidence that contains no real
-conversation data.
+Para cambios de Mobile, compilá o probá además un target de simulador sin firma.
+Para UI, adjuntá evidencia anterior y posterior sin conversaciones reales.
 
-## Write a useful pull request
+## Escribí un pull request útil
 
-State five things:
+Respondé cinco preguntas:
 
-1. What problem exists?
-2. Why does this component own the fix?
-3. Does the change affect compatibility or security?
-4. What tests and manual checks passed?
-5. Does an operator need a migration or rollback step?
+1. ¿Qué problema existe?
+2. ¿Por qué este componente es responsable?
+3. ¿Afecta compatibilidad o seguridad?
+4. ¿Qué pruebas y verificaciones pasaron?
+5. ¿Hace falta migración o rollback?
 
-Keep the diff focused. Do not include unrelated generated files. Contributions
-use the repository's MIT License.
+Mantené el diff enfocado. No incluyas archivos generados ajenos al cambio. Las
+contribuciones usan la licencia MIT del repositorio.

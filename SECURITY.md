@@ -1,31 +1,34 @@
-# Security policy
+# Política de seguridad
 
-## Supported code
+## Código soportado
 
-Security work applies to the latest `main` branch and the latest tagged
-release. Older commits are not maintained as separate supported versions.
+El trabajo de seguridad se aplica a la rama `main` y al último release. Los
+commits anteriores no se mantienen como versiones soportadas independientes.
 
-## Send reports privately
+## Enviar reportes en privado
 
-Use [GitHub private vulnerability reporting](https://github.com/GBurgardt/fermin-code/security/advisories/new).
+Usá el [reporte privado de vulnerabilidades de GitHub](https://github.com/GBurgardt/fermin-code/security/advisories/new).
 
-Do not put any of these in a public issue, discussion, or pull request:
+No publiques en un issue, discusión o pull request:
 
-- exploit details;
-- production endpoints;
-- tokens or suspected secrets;
-- personal data; or
-- real conversation content.
+- detalles de un exploit;
+- endpoints de producción;
+- tokens o secretos sospechados;
+- datos personales; ni
+- conversaciones reales.
 
-Include the affected component, commit, impact, reproduction conditions, and a
-safe proof of concept when available. Redact credentials and user content.
+Incluí el componente y commit afectados, impacto, condiciones de reproducción y
+una prueba de concepto segura cuando exista. Ocultá credenciales y contenido de
+usuarios.
 
-This volunteer project has no response-time SLA. Report handling and any
-advisory depend on the verified impact and the available mitigation.
+Este proyecto voluntario no tiene SLA de respuesta. El tratamiento del reporte
+y cualquier advisory dependen del impacto verificado y de la mitigación
+disponible.
 
-## Deployment remains the operator's responsibility
+## El despliegue es responsabilidad del operador
 
-This release is single-user and self-hosted. The operator owns TLS ingress,
-host security, Codex sandbox and approval settings, workspace allow-lists,
-credentials, retention, and updates. Read the [security model](docs/SECURITY_MODEL.md)
-before exposing a relay outside loopback.
+Esta versión es autoalojada y para una sola persona. El operador controla el
+ingreso TLS, la seguridad de la Mac, sandbox y aprobaciones de Codex, workspaces
+permitidos, credenciales, retención y actualizaciones. Leé el
+[modelo de seguridad](docs/SECURITY_MODEL.md) antes de exponer un relay fuera de
+loopback.

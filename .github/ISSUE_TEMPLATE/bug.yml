@@ -1,31 +1,31 @@
-name: Bug report
-description: Report a reproducible Fermín Code defect
+name: Reportar un bug
+description: Informá un defecto reproducible de Fermín
 title: "[Bug]: "
 labels: [bug]
 body:
   - type: dropdown
     id: component
     attributes:
-      label: Component
-      options: [Service, Desktop, Mobile, Documentation]
+      label: Componente
+      options: [Service, Desktop, Mobile, Documentación]
     validations:
       required: true
   - type: textarea
     id: behavior
     attributes:
-      label: Observed behavior
-      description: What happened, and what did you expect instead?
+      label: Comportamiento observado
+      description: ¿Qué ocurrió y qué esperabas?
     validations:
       required: true
   - type: textarea
     id: reproduce
     attributes:
-      label: Reproduction
-      description: Minimal, redacted steps and relevant versions.
+      label: Reproducción
+      description: Pasos mínimos, datos ocultos y versiones relevantes.
     validations:
       required: true
   - type: textarea
     id: evidence
     attributes:
-      label: Redacted diagnostics
-      description: Never include tokens, private prompts, production URLs, or personal files.
+      label: Diagnósticos sin datos privados
+      description: Nunca incluyas tokens, prompts privados, URLs de producción ni archivos personales.
