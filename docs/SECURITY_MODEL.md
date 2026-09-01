@@ -2,16 +2,16 @@
 
 [← Documentación](README.md)
 
-## En una frase
+## Resumen
 
-Fermín transporta órdenes hacia una computadora real. Protegé el relay como
-una puerta de entrada y el engine como la autoridad local de esa Mac.
+Fermín transporta órdenes hacia una Mac con acceso a archivos y procesos. El
+relay es el punto de entrada remoto y el engine es la autoridad local del host.
 
-## El riesgo real
+## Nivel de acceso
 
-Fermín puede pedirle a Codex que lea archivos, cambie un workspace y
-ejecute comandos en una Mac autorizada. Por eso el relay no es un servidor de
-chat común: es la central desde la que se envían órdenes a computadoras reales.
+Fermín puede solicitar que Codex lea archivos, modifique un workspace y ejecute
+comandos en una Mac autorizada. Un token de cliente puede habilitar operaciones
+con ese nivel de acceso.
 
 Si no confiarías ese nivel de acceso a un dispositivo, a la entrada de red o a
 quien posee un token, no lo conectes.

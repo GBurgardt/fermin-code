@@ -1,12 +1,12 @@
-# API: el contrato de la central
+# API
 
 [← Documentación](README.md)
 
-La API es la forma concreta en que un cliente entrega una intención al relay y
-recupera lo ocurrido. Este documento resume las rutas; la definición real vive
-en `service/src/api.rs`. La API `v0.1` todavía puede cambiar.
+La API permite que un cliente envíe operaciones al relay y recupere su estado.
+Este documento resume las rutas. La definición autoritativa está en
+`service/src/api.rs`. La API `v0.1` puede cambiar.
 
-## En una frase
+## Resumen
 
 Un cliente se autentica, envía una orden con una clave de idempotencia, recibe
 su aceptación durable y sigue el resultado mediante eventos o consultas.
@@ -95,7 +95,7 @@ pantalla pequeña. Abrí sólo el bloque que necesitás.
 `service/src/api.rs` también define rutas acotadas para subagentes,
 transformación de prompts y preferencias.
 
-## Aceptar es tomar custodia
+## Semántica de `accepted`
 
 `accepted` significa que el relay guardó la orden. No significa que Codex la
 terminó.
@@ -111,8 +111,8 @@ El recorrido habitual es:
 El recorrido también puede terminar en `failed`, `cancelled` o `unknown`.
 
 Al reintentar la misma acción del usuario, enviá la misma clave de
-idempotencia. El relay reconoce que sigue siendo la misma intención. Una clave
-nueva representa una acción nueva.
+idempotencia. El relay reconoce que se trata de la misma operación. Una clave
+nueva representa otra operación.
 
 ## Eventos y reconexión
 

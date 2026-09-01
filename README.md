@@ -1,200 +1,219 @@
 # Fermín
 
-**Una central durable que toma custodia de tus órdenes y las hace llegar al
-host correcto.**
+Fermín es un sistema autoalojado para operar sesiones de Codex que se ejecutan
+en una Mac remota. Los clientes envían órdenes a un relay durable. El relay las
+persiste y el engine de la Mac host las entrega a Codex.
 
-Fermín nació de una necesidad concreta: tener una idea lejos de la
-computadora, mandarla desde el iPhone y seguir con el día sin preguntarse si
-llegó, si quedó duplicada o si después se podrá recuperar lo ocurrido.
+Codex razona, usa herramientas y modifica el workspace. Fermín gestiona el
+transporte remoto, la persistencia de las órdenes, la reconexión de los clientes
+y la recuperación del historial.
 
-> **Mandás una orden y dejás de vigilar el transporte.**
+[Funcionamiento](#funcionamiento) · [Topología](#topología) ·
+[Instalación](#instalación) · [Documentación](#documentación)
 
-Codex sigue siendo quien razona, usa herramientas y modifica el workspace.
-Fermín se ocupa del camino: recibe la intención, la guarda, la deriva hacia la
-Mac indicada y conserva su historia.
+## Funcionamiento
 
-[Entenderlo](#entenderlo-en-30-segundos) · [Verlo](#así-se-ve) ·
-[Probarlo](#probarlo) · [Leer la documentación](#documentación)
+1. Un cliente envía una orden. Puede ser Mobile, Desktop u otra aplicación.
+2. El relay autentica la solicitud y persiste la orden.
+3. El engine del host recibe la orden y la entrega a Codex App Server.
+4. Los eventos regresan al relay y quedan disponibles para los clientes.
 
-## Entenderlo en 30 segundos
-
-1. **Mandás una orden.** Puede salir del iPhone, Desktop u otra aplicación.
-2. **El relay toma custodia.** La autentica, la guarda y deja registrada su
-   historia antes de continuar.
-3. **El host hace el trabajo.** Su engine entrega la orden a Codex y devuelve
-   los eventos al relay.
-
-Todos los clientes hablan con la misma central. Ninguno necesita conectarse
-directamente con cada computadora.
+Una orden pasa a estado `accepted` después de quedar guardada en el relay. Ese
+estado confirma la recepción durable; no confirma que Codex haya terminado el
+trabajo.
 
 ```text
-Clientes
+Cliente
    ↓
 Relay durable
    ↓
-Hosts con engine
+Engine del host
+   ↓
+Codex App Server
+```
+
+Los clientes se conectan al relay. No se conectan directamente al engine ni a
+Codex App Server.
+
+## Topología
+
+### Estado de `v0.1`
+
+Cada instancia de relay admite una generación activa de engine. Para operar dos
+hosts, se despliega un par relay–engine por host y los clientes seleccionan el
+endpoint Primary o Secondary.
+
+```text
+Primary
+   ↓
+Relay
+   ↓
+Engine
    ↓
 Codex
 ```
 
+```text
+Secondary
+   ↓
+Relay
+   ↓
+Engine
+   ↓
+Codex
+```
+
+### Arquitectura objetivo
+
+La arquitectura objetivo usa un relay para registrar varios hosts. Cada orden
+incluye el host de destino y el relay la entrega al engine autorizado.
+
 <a href="docs/images/architecture/relay-star-mobile.svg">
   <picture>
     <source media="(max-width: 600px)" srcset="docs/images/architecture/relay-star-mobile.svg">
-    <img src="docs/images/architecture/relay-star-platform.png" alt="Clientes conectados con distintos hosts mediante un relay durable central">
+    <img src="docs/images/architecture/relay-star-platform.svg" alt="Clientes conectados con distintos hosts mediante un relay durable central">
   </picture>
 </a>
 
-<sub>Tocá el diagrama para verlo en tamaño completo.</sub>
+<sub>El diagrama representa la arquitectura objetivo. La versión `v0.1` todavía
+usa un relay por host. La imagen se puede abrir en resolución completa.</sub>
 
-## La forma que guía Fermín
+El routing de varios hosts dentro de una única instancia no está implementado
+en `v0.1`. No existe una fecha comprometida para esa capacidad.
 
-La arquitectura objetivo es una estrella: N clientes, un relay durable y M
-hosts. Los clientes conocen al relay. Los engines conocen al relay. No hay
-conexiones directas cliente→engine.
+[Consultar la arquitectura completa](docs/ARCHITECTURE.md)
 
-La versión pública `v0.1` todavía usa **un par relay–engine por host**. Mobile y
-Desktop eligen entre Primary y Secondary mediante endpoints separados. El
-routing de varios hosts dentro de una única instancia de relay es la forma que
-guía el diseño, no una función ya terminada ni una fecha prometida.
+## Comportamiento ante interrupciones
 
-[Ver la arquitectura completa →](docs/ARCHITECTURE.md)
+- **Cierre del cliente:** una orden aceptada permanece en el relay. El cliente
+  puede recuperar eventos posteriores mediante su cursor.
+- **Reintento del cliente:** la misma clave de idempotencia identifica la misma
+  orden y evita crear un duplicado.
+- **Desconexión del engine:** el relay puede conservar trabajo pendiente si
+  continúa disponible.
+- **Reconexión del engine:** leases y fencing determinan qué conexión conserva
+  autoridad.
+- **Relay y engine en la misma Mac:** si esa Mac queda fuera de línea, el relay
+  no puede aceptar órdenes nuevas durante la interrupción.
 
-## Por qué importa
+Fermín no enciende una Mac apagada y no garantiza ejecución exactamente una
+vez. Si una orden llega a Codex y el engine falla antes de registrar el
+resultado, el estado puede quedar como `unknown` y requiere reconciliación.
 
-Podés estar caminando por la casa, yendo al kiosco o lejos de la Mac correcta.
-Se te ocurre algo, mandás un audio o una orden desde el iPhone y seguís con tu
-vida.
+## Componentes
 
-No tenés que quedarte mirando:
+### Relay
 
-- si Internet se cortó justo en ese momento;
-- si la aplicación quedó abierta;
-- si la orden llegó;
-- si un reintento la envió dos veces; o
-- si después vas a poder recuperar lo ocurrido.
-
-El relay convierte esa preocupación en infraestructura. Primero guarda la
-intención. Después la hace llegar al lugar correcto. Finalmente conserva la
-historia para que puedas volver desde otro dispositivo y encontrar el estado
-correcto.
-
-Esa confianza elimina fricción. Cuando mandar una idea deja de ser un pequeño
-procedimiento técnico, aprovechás ideas que antes habrías dejado pasar por no
-estar frente a la computadora indicada.
-
-## Qué hace cada pieza
-
-### Cliente
-
-Expresa la intención y muestra qué ocurrió. Mobile y Desktop son dos clientes
-de referencia. Se conectan al relay; nunca directamente al engine.
-
-### Relay durable
-
-Ocupa el centro. Recibe, autentica, guarda, ordena, deriva y permite retomar.
-“Aceptada” significa que tomó custodia de la orden, no que Codex ya terminó.
+Recibe solicitudes HTTP, autentica clientes, persiste órdenes, mantiene el
+registro de eventos y expone actualizaciones mediante Server-Sent Events (SSE).
+La conexión con el engine usa WebSocket autenticado.
 
 ### Engine
 
-Vive en la Mac que hace el trabajo. Mantiene Codex App Server local, limita qué
-workspaces puede tocar y traduce las órdenes de Fermín al contrato de Codex.
+Se ejecuta en la Mac host. Inicia Codex App Server como proceso local, valida
+versiones y capacidades, limita el acceso mediante `workspaceRoots` y traduce
+las órdenes de Fermín al protocolo de Codex.
 
-### Codex
+### Mobile y Desktop
 
-Razona y ejecuta. Fermín no intenta reemplazarlo ni reconstruir su harness.
+Son clientes de referencia para iOS y macOS. Usan REST para enviar operaciones,
+SSE para recibir eventos y Keychain para almacenar tokens. No ejecutan Codex ni
+el engine.
 
-## Por qué no hablar directo con App Server
+### Codex App Server
 
-Una conexión directa sirve cuando el cliente, la Mac y la red están disponibles
-al mismo tiempo. El relay agrega lo que necesita el uso remoto cotidiano:
+Administra threads, turns, herramientas, sandbox, aprobaciones y ejecución.
+Permanece local en la Mac host y no se publica directamente en Internet.
 
-- guarda la orden antes de aceptarla;
-- reconoce un reintento sin duplicar la intención;
-- conserva trabajo si el relay sigue disponible aunque el host se desconecte;
-- reproduce eventos desde el cursor de cada cliente; y
-- quita autoridad a conexiones viejas mediante leases y fencing.
+## Relación con Codex App Server
 
-App Server resuelve cómo trabaja Codex. Fermín resuelve cómo una intención llega
-hasta él y cómo recuperás después lo que ocurrió.
+Un cliente puede conectarse directamente a App Server cuando el cliente, el
+host y la red permanecen disponibles durante toda la operación. Fermín agrega
+una capa durable para entornos remotos o intermitentes:
 
-## Así se ve
+- persistencia antes de confirmar aceptación;
+- idempotencia para reintentos;
+- cola mientras el engine está desconectado y el relay sigue disponible;
+- replay por cursor para cada cliente; y
+- leases y fencing para controlar la autoridad de las conexiones.
 
-Mobile muestra que un cliente puede seguir muchas sesiones remotas desde el
-iPhone. La captura usa contenido de demostración, no datos de una sesión real.
+App Server ejecuta el trabajo de Codex. Fermín administra la entrega y el
+historial remoto de ese trabajo.
+
+## Interfaces de referencia
+
+La siguiente captura muestra el cliente Mobile con datos de demostración.
 
 [![Fermín Mobile mostrando varias sesiones activas](docs/images/en/mobile/mobile-many-sessions.png)](docs/images/en/mobile/mobile-many-sessions.png)
 
-<sub>Tocá la captura para abrirla en resolución completa.</sub>
+<sub>La imagen se puede abrir en resolución completa.</sub>
 
 <details>
-<summary><strong>Ver una conversación en Mobile</strong></summary>
+<summary><strong>Conversación en Mobile</strong></summary>
 
 [![Conversación remota en Fermín Mobile](docs/images/en/mobile/mobile-conversation.png)](docs/images/en/mobile/mobile-conversation.png)
 
 </details>
 
 <details>
-<summary><strong>Ver Fermín Desktop</strong></summary>
+<summary><strong>Cliente Desktop</strong></summary>
 
 [![Fermín Desktop mostrando sesiones remotas](docs/images/en/desktop/desktop-main.png)](docs/images/en/desktop/desktop-main.png)
 
 </details>
 
-## Qué contiene el repositorio
+## Contenido del repositorio
 
-- **`service/`:** relay en Rust, engine para Mac y CLI de diagnóstico.
+- **`service/`:** relay, engine y CLI de diagnóstico escritos en Rust.
 - **`desktop/`:** cliente nativo para macOS.
 - **`mobile/`:** cliente nativo para iOS 17 o posterior.
 
-Las tres superficies tienen código compilable. El repositorio no incluye un
-relay alojado ni un instalador de consumo de un clic. Está dirigido hoy a
-desarrolladores capaces de configurar macOS, Codex, ingreso TLS y tokens
-privados.
+Las tres superficies contienen código compilable. El repositorio no incluye un
+relay alojado ni un instalador de un paso. La instalación actual requiere
+experiencia con macOS, Codex, TLS y administración de tokens.
 
-## Probarlo
+## Instalación
 
-La forma más corta usa una sola Mac como relay y host. Necesitás macOS, Rust
-1.92 o posterior, Xcode Command Line Tools, Xcode completo para Mobile,
-XcodeGen y un Codex CLI compatible ya autenticado.
+La topología local mínima ejecuta relay, engine y Codex en una misma Mac.
+Requiere macOS, Rust 1.92 o posterior, Xcode Command Line Tools, un Codex CLI
+compatible y autenticado, y Xcode con XcodeGen si se compila Mobile.
 
-[Seguir el autoalojamiento paso a paso →](docs/SELF_HOSTING.md)
+[Seguir la guía de autoalojamiento](docs/SELF_HOSTING.md)
 
-Si sólo querés comprobar un componente:
+Para verificar un componente por separado:
 
-- [probar relay y engine](service/README.md);
-- [ejecutar Desktop](desktop/README.md); o
-- [generar Mobile](mobile/README.md).
+- [relay y engine](service/README.md);
+- [cliente Desktop](desktop/README.md); o
+- [cliente Mobile](mobile/README.md).
 
-Las URLs de ejemplo usan `relay.example.com` y no funcionan. Elegí tus propios
-endpoints e ingresá los tokens desde las apps; se guardan en Keychain. Nunca
-confirmes tokens en Git.
+Las URLs de ejemplo usan `relay.example.com` y no son endpoints operativos.
+Los tokens se configuran localmente y los clientes Apple los almacenan en
+Keychain. No confirmes tokens en Git.
 
-## Límites actuales
+## Límites de `v0.1`
 
-La versión pública es autoalojada y para una sola persona. Una instancia de
-relay admite una generación activa de engine. No incluye cuentas,
-multi-tenancy, pairing, relay alojado, actualizaciones automáticas, binarios
-notarizados ni cifrado de extremo a extremo.
+- Uso autoalojado para una persona.
+- Una generación activa de engine por instancia de relay.
+- Sin cuentas, multi-tenancy ni pairing de dispositivos.
+- Sin relay alojado ni actualizaciones automáticas.
+- Sin binarios notarizados para distribución pública.
+- Sin cifrado de extremo a extremo del contenido.
 
-El relay escucha sólo en loopback. Para acceso remoto necesitás un proxy TLS,
-una red privada o un túnel saliente. Una Mac dormida o apagada no puede
-ejecutar trabajo; el relay sólo puede encolar si él mismo sigue disponible.
+El relay escucha sólo en loopback. El acceso remoto requiere un proxy TLS, una
+red privada o un túnel saliente. Una Mac dormida o apagada no puede ejecutar
+trabajo. El relay sólo puede mantener una cola si continúa disponible.
 
-[Leer todos los límites y el modelo de seguridad →](docs/SECURITY_MODEL.md)
+[Consultar el modelo de seguridad](docs/SECURITY_MODEL.md)
 
 ## Documentación
 
-[Abrir la guía de documentación →](docs/README.md)
-
-- [Arquitectura](docs/ARCHITECTURE.md): entender relay, engine, clientes y
-  Codex.
-- [Autoalojamiento](docs/SELF_HOSTING.md): montar la forma más corta en una
-  Mac.
-- [API](docs/API.md): integrar otro cliente con la central.
-- [Modelo de seguridad](docs/SECURITY_MODEL.md): entender autoridad y riesgos.
-- [Cómo explicar Fermín](docs/LAUNCH.md): comunicar el proyecto sin prometer de
-  más.
-- [Cómo contribuir](CONTRIBUTING.md): preparar un cambio útil.
+- [Índice de documentación](docs/README.md)
+- [Arquitectura](docs/ARCHITECTURE.md)
+- [Autoalojamiento](docs/SELF_HOSTING.md)
+- [API](docs/API.md)
+- [Modelo de seguridad](docs/SECURITY_MODEL.md)
+- [Descripción pública](docs/LAUNCH.md)
+- [Contribuciones](CONTRIBUTING.md)
 
 ## Licencia
 

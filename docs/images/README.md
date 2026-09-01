@@ -10,13 +10,13 @@ del despliegue original.
 
 Hay dos formatos del mismo concepto:
 
-- `architecture/relay-star-platform.png` — composición horizontal para una
+- `architecture/relay-star-platform.svg` — composición horizontal para una
   pantalla amplia.
 - `architecture/relay-star-mobile.svg` — composición vertical, texto grande y
   líneas simples para una pantalla angosta.
 
-El README usa `<picture>` para elegir el formato según el ancho disponible. El
-SVG conserva texto exacto, escala sin perder nitidez y ofrece título y
+El README usa `<picture>` para elegir el formato según el ancho disponible. Los
+SVG conservan texto exacto, escalan sin perder nitidez y ofrecen título y
 descripción accesibles. Cada diagrama también funciona como enlace a su archivo
 completo.
 
@@ -24,9 +24,8 @@ Ambos muestran conexiones cliente↔relay y engine↔relay. Deliberadamente no
 muestran conexiones directas cliente→engine. El formato mobile aclara además
 que la estrella es la forma objetivo y que `v0.1` usa un relay por host.
 
-La ilustración horizontal fue generada y ajustada con Imagegen integrado. El
-SVG vertical fue construido como vector nativo y revisado en un viewport de
-iPhone.
+Los dos diagramas actuales son vectores nativos. El formato vertical fue
+revisado en un viewport de iPhone.
 
 ## Capturas Mobile
 
@@ -68,7 +67,7 @@ al participante.
 
 - Mobile: aproximadamente 853 × 1844 píxeles.
 - Desktop: 1587 × 991 píxeles.
-- Arquitectura horizontal: 1672 × 941 píxeles.
+- Arquitectura horizontal: SVG con proporción 1600 × 900.
 - Arquitectura mobile: SVG con proporción 720 × 1240.
 
 Antes de publicar se revisaron credenciales, endpoints, rutas personales,

@@ -1,12 +1,12 @@
-# Service: la central y los hosts
+# Service: relay y engine
 
 [← Volver al README](../README.md)
 
-Este crate contiene el camino durable entre los clientes y Codex. Compila tres
-comandos:
+Este crate implementa el relay, el engine y la herramienta de diagnóstico.
+Compila tres comandos:
 
-- `fermin-relay`: es la central. Recibe órdenes, las guarda, emite eventos SSE
-  y mantiene la conexión con el host.
+- `fermin-relay`: recibe órdenes, las persiste, emite eventos SSE y mantiene la
+  conexión con el host.
 - `fermin-engine`: vive en cada Mac host. Inicia y observa Codex App Server y lo
   conecta con la central.
 - `ferminctl`: comprueba la instalación local de Codex sin exponer
@@ -44,8 +44,8 @@ los valores. El loader rechaza:
 - workspace roots relativos; y
 - una URL engine→relay fuera de loopback sin TLS.
 
-Relay y engine usan bases SQLite separadas en modo WAL. La central guarda su
-historia y cada host conserva su estado local. Ese diseño corresponde al
+Relay y engine usan bases SQLite separadas en modo WAL. El relay guarda el
+historial y cada host conserva su estado local. Ese diseño corresponde al
 despliegue actual de una persona; no es almacenamiento multi-tenant ni
 horizontalmente escalable.
 

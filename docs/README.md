@@ -2,49 +2,49 @@
 
 [← Volver al README](../README.md)
 
-No necesitás leer todo para entender el proyecto. Elegí lo que querés hacer y
-andá directo a ese documento.
+La documentación está organizada por función. Cada documento distingue el
+comportamiento de `v0.1` de la arquitectura objetivo.
 
-## Quiero entender Fermín
+## Arquitectura
 
-[Leer Arquitectura →](ARCHITECTURE.md)
+[Arquitectura](ARCHITECTURE.md)
 
-Explica qué son el relay, el engine, los clientes y Codex; cómo viaja una orden;
-y qué parte de la estrella N×M existe hoy.
+Describe el relay, el engine, los clientes, Codex App Server, el ciclo de una
+orden y los mecanismos de recuperación.
 
-## Quiero probarlo en una Mac
+## Instalación
 
-[Seguir Autoalojamiento →](SELF_HOSTING.md)
+[Autoalojamiento](SELF_HOSTING.md)
 
-Monta la forma más corta: relay, engine y Codex en una misma Mac. Después podés
-conectar Desktop y Mobile.
+Configura la topología local mínima con relay, engine y Codex en una misma Mac.
+Incluye Desktop, Mobile y acceso remoto.
 
-## Quiero integrar otro cliente
+## Integración
 
-[Consultar la API →](API.md)
+[API](API.md)
 
-Resume autenticación, órdenes durables, rutas, estados, eventos y reconexión.
+Documenta autenticación, rutas, estados de órdenes, eventos y reconexión.
 
-## Quiero exponerlo con cuidado
+## Seguridad
 
-[Leer el Modelo de seguridad →](SECURITY_MODEL.md)
+[Modelo de seguridad](SECURITY_MODEL.md)
 
-Explica qué autoridad recibe Fermín, qué controles ya existen y qué debe
-proteger quien lo opera.
+Define el nivel de acceso, los controles implementados, las responsabilidades
+del operador y las capacidades no incluidas.
 
-## Quiero explicárselo a otra persona
+## Descripción pública
 
-[Abrir Cómo explicar Fermín →](LAUNCH.md)
+[Descripción pública](LAUNCH.md)
 
-Contiene la explicación general, una versión para un jefe, una versión sencilla
-y las frases que fijan el lenguaje público.
+Contiene una definición técnica, un resumen ejecutivo, una explicación no
+técnica y límites para la comunicación pública.
 
-## Quiero contribuir
+## Contribuciones
 
-[Leer Cómo contribuir →](../CONTRIBUTING.md)
+[Cómo contribuir](../CONTRIBUTING.md)
 
-Ayuda a elegir la superficie correcta, preparar pruebas y mantener clara la
-frontera entre Fermín y Codex.
+Define el alcance de cada componente, las verificaciones requeridas y las
+reglas de documentación.
 
 ## Orden sugerido
 
@@ -55,5 +55,4 @@ Si querés conocer el proyecto de punta a punta:
 3. [API](API.md)
 4. [Modelo de seguridad](SECURITY_MODEL.md)
 
-Cada documento vuelve a este índice. Desde el iPhone podés avanzar sin regresar
-a la lista de archivos del repositorio.
+Cada documento incluye enlaces al índice y al documento siguiente.

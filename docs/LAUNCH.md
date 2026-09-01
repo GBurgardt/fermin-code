@@ -1,142 +1,148 @@
-# Cómo explicar Fermín
+# Descripción pública
 
 [← Documentación](README.md)
 
-Este archivo fija el lenguaje público del proyecto. No es una hoja de ruta ni
-un calendario. Sirve para explicar Fermín de forma simple, concreta y honesta.
+Este documento define cómo describir Fermín. No es una hoja de ruta ni un
+calendario de producto.
 
-## La idea central
+## Definición
 
-Fermín es una central durable para trabajar con Codex en distintas
-computadoras. Instalás el relay en una máquina suficientemente disponible y
-conectás como hosts las Macs donde realmente trabaja Codex.
-
-Después mandás órdenes desde el iPhone, Desktop u otro cliente. Todas llegan a
-la misma central. El relay las guarda, identifica su destino, las deriva al host
-correcto y conserva la historia de lo ocurrido.
+Fermín es un sistema autoalojado para operar sesiones de Codex en una Mac
+remota. Los clientes envían órdenes a un relay durable. El relay las persiste,
+las entrega al engine correspondiente y conserva los eventos resultantes.
 
 ```text
-Clientes
+Cliente
    ↓
 Relay durable
    ↓
-Hosts
+Engine del host
    ↓
-Codex
+Codex App Server
 ```
 
-> **Mandás una orden y dejás de vigilar el transporte.**
+Codex realiza el razonamiento y la ejecución. Fermín administra el transporte,
+la persistencia y la recuperación del estado remoto.
 
-## Explicación general
+## Descripción general
 
-Yo básicamente tengo una Mac en mi casa y ahí instalo una especie de central.
-Esa central es el relay durable.
+El relay puede ejecutarse en una Mac o en otro servidor disponible. Cada Mac
+que ejecuta Codex necesita un engine local.
 
-Le digo relay porque recibe órdenes y las reenvía. Le digo durable porque no se
-limita a pasarlas en vivo: primero las guarda. Toma custodia de cada orden antes
-de seguir con el proceso.
+Los clientes se conectan al relay y no al engine. Cuando un cliente envía una
+orden, el relay:
 
-Después configuro como hosts las computadoras donde quiero trabajar. En cada
-host vive un engine junto a Codex. Desde cualquier cliente mando una intención
-y elijo su destino. Todos los clientes hablan con la misma central; no necesitan
-conectarse directamente con cada Mac.
+1. autentica la solicitud;
+2. persiste la orden;
+3. la entrega al engine cuando está disponible; y
+4. conserva los eventos para que los clientes recuperen el estado.
 
-Si el host está disponible, el relay entrega la orden. Si está temporalmente
-desconectado y el relay sigue en línea, la conserva hasta que pueda continuar.
-Los eventos y resultados vuelven a la central, que guarda la historia para que
-yo pueda entrar desde otro cliente y saber qué ocurrió.
+El término *durable* indica que la orden se guarda antes de confirmar su
+aceptación. El relay no se limita a reenviar datos durante una conexión activa.
 
-## Para explicárselo a un jefe
+## Resumen ejecutivo
 
-> Fermín es una central durable para trabajar con Codex en distintas
-> computadoras. Conecto mis Macs como hosts y mando órdenes desde el iPhone,
-> Desktop o cualquier otro cliente. Todas llegan al mismo relay, que primero las
-> guarda, después las deriva al host correcto y conserva la historia de lo
-> ocurrido. El valor no es solamente el acceso remoto: es poder mandar una
-> intención y confiar en que no depende de una conexión perfecta ni de que yo
-> siga mirando la aplicación.
+> Fermín permite operar sesiones de Codex que se ejecutan en una Mac remota.
+> Mobile, Desktop u otro cliente envían órdenes a un relay autoalojado. El
+> relay persiste cada orden, la entrega al engine del host y conserva los
+> eventos. Esto permite reintentar, reconectar clientes y recuperar el estado
+> sin publicar Codex App Server directamente en Internet.
 
-## Para explicárselo a los chicos
+## Explicación no técnica
 
-> Tengo una central en el medio. Le mando una orden desde cualquier lado, la
-> central la guarda y se la pasa a la computadora que elegí. Si algo se corta,
-> la orden no depende solamente de ese instante. Después vuelvo desde el celular
-> o desde otra Mac y puedo ver qué pasó.
+> Fermín coloca una central entre los dispositivos del usuario y la computadora
+> que ejecuta Codex. La central guarda cada orden y la entrega a la computadora
+> configurada. Si el cliente se desconecta, puede volver y consultar lo que
+> ocurrió.
 
-## La frase corta
+## Definición breve
 
-> **Fermín es una central durable que toma custodia de mis órdenes y las hace
-> llegar al host correcto.**
+> **Fermín es un relay autoalojado que persiste órdenes y las entrega a una Mac
+> que ejecuta Codex.**
 
-## La experiencia completa
+## Resultado operativo
 
-> **Yo mando una idea desde cualquier lugar. Fermín la guarda, la deriva a la
-> computadora correcta y conserva su historia. Por eso puedo seguir con mi vida
-> confiando en que la intención no quedó perdida en el camino.**
+Un usuario puede enviar una orden desde Mobile, cerrar el cliente y recuperar
+los eventos más tarde. Después de que el relay responde `accepted`, la orden
+ya está persistida.
 
-Éste es el valor cotidiano. Podés estar caminando por la casa o yendo al kiosco,
-mandar un audio desde el iPhone y seguir con lo que estabas haciendo. La
-confianza elimina fricción; cuando enviar una idea deja de ser un procedimiento
-técnico, aprovechás más ideas.
+Este comportamiento está sujeto a dos condiciones:
 
-## Qué se puede afirmar hoy
+- el relay debe continuar disponible para aceptar órdenes nuevas; y
+- el host debe volver a conectarse para que Codex ejecute trabajo pendiente.
 
-La versión pública demuestra estas capacidades:
+Fermín no enciende una Mac apagada y no sustituye la política de sandbox y
+aprobaciones de Codex.
 
-- los clientes hablan con el relay, nunca con el engine;
-- el relay persiste órdenes y permite reanudar eventos;
-- cada engine vive junto a Codex en la Mac que hace el trabajo; y
-- Mobile y Desktop demuestran cómo consumir el contrato.
+## Capacidades verificables en `v0.1`
 
-La arquitectura que guía el proyecto es una estrella N×M alrededor de un relay
-central. La release `v0.1` usa una instancia relay–engine por host y los clientes
-eligen endpoints. No la describas como un hub multi-host ya terminado.
+- Los clientes se conectan al relay, no al engine.
+- El relay persiste órdenes y eventos.
+- Las claves de idempotencia permiten reintentos sin crear otra orden.
+- Cada cliente puede reanudar eventos desde su cursor.
+- Leases y fencing controlan la autoridad de la conexión del engine.
+- El engine se ejecuta junto a Codex en la Mac host.
+- Mobile y Desktop implementan el contrato del relay.
+
+La versión `v0.1` usa una instancia relay–engine por host. Los clientes eligen
+entre endpoints Primary y Secondary.
+
+## Arquitectura objetivo
+
+La arquitectura objetivo registra varios hosts en un relay. Cada orden indica
+el host de destino y el relay selecciona el engine autorizado.
+
+Esta capacidad requiere identidad, autorización, almacenamiento y fencing por
+host. No está implementada en `v0.1` y no tiene una fecha de entrega publicada.
+
+## Capacidades no incluidas
+
+No describas la versión actual como si incluyera:
+
+- instalación de un paso;
+- relay alojado;
+- routing multi-host en una instancia;
+- cuentas o aislamiento multi-tenant;
+- wake garantizado de una Mac;
+- disponibilidad continua;
+- cifrado de extremo a extremo; o
+- distribución binaria firmada y notarizada.
+
+## Estado de la publicación
 
 Repositorio:
 
 <https://github.com/GBurgardt/fermin-code>
 
-Comprobado en la publicación original:
+La publicación incluye:
 
-- lectura anónima del repositorio;
-- CI de Rust, macOS e iOS;
+- código del relay, engine, Mobile y Desktop;
+- CI para Rust, macOS e iOS;
 - secret scanning y push protection;
 - reporte privado de vulnerabilidades;
-- imágenes públicas con contenido neutro; y
+- imágenes con contenido de demostración; y
 - límites de autoalojamiento documentados.
 
-Todavía falta evidencia independiente de una instalación completa siguiendo la
-guía en una tercera Mac limpia. No lo presentes como “un clic” ni como una
-experiencia terminada para usuarios no técnicos.
+Todavía falta una prueba independiente de la guía completa en una tercera Mac
+sin configuración previa.
 
-## Comunicación pública
+## Canales de publicación
 
-Los borradores quedan plegados para que este documento siga siendo fácil de
-leer desde el teléfono. Abrí sólo el canal que vayas a usar.
+Los textos siguientes son borradores factuales. Deben actualizarse si cambia el
+estado del repositorio.
 
 <details>
-<summary><strong>Primer anuncio: X</strong></summary>
+<summary><strong>X</strong></summary>
 
-X permite contar el origen personal y apuntar directo al código.
-
-> Publiqué Fermín.
+> Fermín `v0.1` está disponible como proyecto open source.
 >
-> Es la central durable que uso para mandar trabajo a Codex desde el iPhone o
-> Desktop. El relay guarda cada orden antes de aceptarla, la deriva hacia la Mac
-> correcta y conserva la historia para que pueda volver desde cualquier cliente.
+> Es un sistema autoalojado para operar sesiones de Codex en una Mac remota.
+> Incluye un relay durable, un engine local y clientes para iOS y macOS.
 >
-> La forma que guía el proyecto es simple: N clientes, una central y M hosts.
-> La versión pública actual implementa un par relay–engine por host y documenta
-> ese límite sin vueltas.
+> El relay persiste las órdenes antes de aceptarlas y conserva los eventos para
+> reconexión y replay. La versión actual usa un par relay–engine por host.
 >
 > [github.com/GBurgardt/fermin-code](https://github.com/GBurgardt/fermin-code)
-
-Seguimiento técnico opcional:
-
-> El valor no es otra interfaz de chat. El relay toma custodia de la intención:
-> guarda antes de aceptar, reconoce reintentos, reproduce eventos desde un
-> cursor y quita autoridad a conexiones viejas. Codex sigue razonando y
-> ejecutando; Fermín hace confiable el camino remoto.
 
 </details>
 
@@ -144,19 +150,19 @@ Seguimiento técnico opcional:
 <summary><strong>Show HN</strong></summary>
 
 Las [reglas de Hacker News](https://news.ycombinator.com/newsguidelines.html)
-piden no publicar texto generado o editado por IA. El autor debe escribir la
-versión final con sus propias palabras.
+piden no publicar texto generado o editado por IA. El autor debe redactar la
+versión final.
 
-Un post factual puede cubrir:
+El post puede documentar:
 
-- el problema personal que originó Fermín;
-- qué ejecuta hoy el repositorio;
-- por qué Codex es el harness y el relay es la capa remota;
-- persistencia, replay, fencing y cola offline;
-- la diferencia entre la implementación actual y la estrella N×M; y
-- qué feedback técnico se busca.
+- el problema técnico;
+- la separación entre relay, engine y Codex App Server;
+- persistencia, replay, idempotencia y fencing;
+- el alcance de `v0.1`;
+- la arquitectura objetivo; y
+- el tipo de revisión técnica solicitada.
 
-Usá un título sencillo `Show HN:`, enlazá el repositorio y no pidas votos ni
+Usá un título descriptivo con el prefijo `Show HN:`. No pidas votos ni
 comentarios coordinados.
 
 </details>
@@ -165,19 +171,14 @@ comentarios coordinados.
 <summary><strong>Product Hunt</strong></summary>
 
 La [guía oficial de Product Hunt](https://help.producthunt.com/en/articles/479557-how-to-post-a-product)
-pide URL de producto, descripción, galería y material de lanzamiento; también
-admite una demo. `v0.1` es una release de código para desarrolladores, sin
-servicio alojado ni instalador guiado.
+requiere una URL de producto, descripción, galería y material de lanzamiento.
 
-Decisión pragmática: **no usar Product Hunt para esta release**. Sólo tendría
-sentido reevaluarlo cuando el producto real sea fácil de instalar y demostrar.
-Esa condición no es un compromiso de construirlo.
+`v0.1` es un repositorio para desarrolladores. No incluye servicio alojado ni
+instalación guiada. Product Hunt no es un canal adecuado para esta versión.
+Esta evaluación puede revisarse si cambia el producto; no constituye un
+compromiso de desarrollo.
 
 </details>
-
-No afirmes cero configuración, wake garantizado, aislamiento multiusuario,
-cifrado de extremo a extremo, disponibilidad alojada ni routing multi-host en
-un único relay hasta que el sistema pueda demostrarlo.
 
 ---
 
