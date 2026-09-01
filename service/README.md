@@ -1,41 +1,50 @@
-# Rust service
+# Service: la central y los hosts
 
-This crate builds three commands:
+Este crate contiene el camino durable entre los clientes y Codex. Compila tres
+comandos:
 
-- `fermin-relay` accepts client commands, stores durable state, streams SSE
-  updates, and connects to the engine.
-- `fermin-engine` runs beside Codex, supervises Codex App Server, and bridges
-  it to the relay.
-- `ferminctl` checks the local Codex installation without exposing unrestricted
-  diagnostics.
+- `fermin-relay`: es la central. Recibe órdenes, las guarda, emite eventos SSE
+  y mantiene la conexión con el host.
+- `fermin-engine`: vive en cada Mac host. Inicia y observa Codex App Server y lo
+  conecta con la central.
+- `ferminctl`: comprueba la instalación local de Codex sin exponer
+  diagnósticos irrestrictos.
 
-## Test it
+## Lo que soporta `v0.1`
+
+Una instancia de `fermin-relay` admite una generación activa de
+`fermin-engine`. La arquitectura objetivo conserva un relay central y engines
+separados por host, pero el routing de varios hosts dentro de una única
+instancia todavía no está implementado.
+
+## Probar
 
 ```bash
 cargo fmt --check
 cargo test --locked
 ```
 
-## Configure it
+## Configurar
 
-Start with:
+Partí de:
 
 - `config/relay.example.toml`
 - `config/engine.example.toml`
 
-The real local filenames are ignored by Git.
+Los nombres de configuración local real están ignorados por Git.
 
-Secret fields contain **absolute paths to token files**, never token values.
-The loader rejects:
+Los campos secretos contienen **rutas absolutas a archivos de token**, nunca
+los valores. El loader rechaza:
 
-- relative token paths;
-- token files with permissive modes;
-- non-loopback listeners;
-- relative workspace roots; and
-- a non-loopback engine-to-relay URL without TLS.
+- rutas de token relativas;
+- permisos demasiado amplios;
+- listeners fuera de loopback;
+- workspace roots relativos; y
+- una URL engine→relay fuera de loopback sin TLS.
 
-The relay and engine use separate SQLite databases in WAL mode. That design is
-for the current single-user deployment. Do not treat it as a multi-tenant,
-horizontally scaled storage design.
+Relay y engine usan bases SQLite separadas en modo WAL. La central guarda su
+historia y cada host conserva su estado local. Ese diseño corresponde al
+despliegue actual de una persona; no es almacenamiento multi-tenant ni
+horizontalmente escalable.
 
-Follow [Self-hosting](../docs/SELF_HOSTING.md) for the complete local run.
+Seguí [Autoalojamiento](../docs/SELF_HOSTING.md) para ejecutar el conjunto.

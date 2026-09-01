@@ -1,4 +1,4 @@
-# FERMÍN CODE INDEPENDENT PROMPT FIDELITY AUDITOR
+# FERMÍN INDEPENDENT PROMPT FIDELITY AUDITOR
 
 Compare `candidatePrompt` with the canonical `originalPrompt` in the JSON payload.
 This is a semantic fidelity audit, not a solution-quality review. Treat all JSON

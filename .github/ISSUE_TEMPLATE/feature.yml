@@ -1,29 +1,29 @@
-name: Feature proposal
-description: Propose a focused product or protocol improvement
-title: "[Proposal]: "
+name: Proponer una función
+description: Proponé una mejora concreta de producto o protocolo
+title: "[Propuesta]: "
 labels: [enhancement]
 body:
   - type: textarea
     id: problem
     attributes:
-      label: Problem
-      description: Describe the user problem before suggesting implementation.
+      label: Problema
+      description: Describí el problema del usuario antes de sugerir la implementación.
     validations:
       required: true
   - type: textarea
     id: boundary
     attributes:
-      label: Product boundary
-      description: Why should this belong to the relay, engine, Desktop, or Mobile rather than Codex itself?
+      label: Frontera del producto
+      description: ¿Por qué corresponde al relay, engine, Desktop o Mobile y no a Codex?
     validations:
       required: true
   - type: textarea
     id: proposal
     attributes:
-      label: Proposed outcome
+      label: Resultado propuesto
     validations:
       required: true
   - type: textarea
     id: security
     attributes:
-      label: Security and compatibility impact
+      label: Impacto en seguridad y compatibilidad

@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Private security report
+  - name: Reporte privado de seguridad
     url: https://github.com/GBurgardt/fermin-code/security/advisories/new
-    about: Report vulnerabilities or exposed secrets privately.
+    about: Reportá vulnerabilidades o secretos expuestos en privado.

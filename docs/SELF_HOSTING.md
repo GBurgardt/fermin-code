@@ -1,39 +1,54 @@
-# Self-hosting
+# Autoalojamiento
 
-This is the shortest supported developer setup. It runs the relay and engine
-manually on one Mac.
+Esta guía arma la forma más corta de Fermín: una Mac funciona como central y
+como host al mismo tiempo. Ejecuta relay y engine manualmente en esa Mac.
 
-It does **not** install background services, create a public hostname, or
-configure Apple signing.
+No instala servicios de fondo, no crea un dominio público y no configura firma
+de Apple.
 
-## 1. Check the host
+## Lo que vas a montar
 
-Install Rust 1.92 or newer and a compatible Codex CLI. Log in to Codex on the
-Mac that will run the engine.
+```text
+Mobile / Desktop ──▶ relay local ──▶ engine local ──▶ Codex App Server
+```
+
+Al terminar, un cliente podrá mandar una orden al relay local; el relay la
+guardará y el engine de esa misma Mac la entregará a Codex.
+
+En `v0.1`, una instancia de relay acepta una generación activa de engine. Para
+operar dos Macs hoy, desplegá un par relay–engine por Mac y configurá los dos
+endpoints en Primary y Secondary. Una única central que derive hacia muchos
+hosts todavía pertenece a la arquitectura objetivo.
+
+## 1. Comprobar la Mac host
+
+Instalá Rust 1.92 o posterior y un Codex CLI compatible. Iniciá sesión en Codex
+en la Mac donde va a correr el engine.
 
 ```bash
 command -v codex
 codex --version
 ```
 
-Build Fermín and run its Codex check:
+Compilá el servicio y comprobá su conexión local con Codex:
 
 ```bash
 (cd service && cargo build --release)
 (cd service && cargo run --bin ferminctl -- doctor --codex "$(command -v codex)")
 ```
 
-Do not continue until `ferminctl doctor` succeeds.
+No sigas hasta que `ferminctl doctor` termine correctamente. Este paso confirma
+que la Mac host puede hablar con Codex antes de agregar el relay.
 
-## 2. Create three tokens
+## 2. Crear tres tokens
 
-Use a different token for each boundary:
+Usá un token distinto para cada frontera:
 
-- clients → relay;
-- engine → relay; and
-- local engine API.
+- clientes → relay;
+- engine → relay; y
+- API local del engine.
 
-This command creates private files from the start:
+Este comando crea archivos privados desde el inicio:
 
 ```bash
 umask 077
@@ -44,71 +59,72 @@ openssl rand -hex 32 > "$HOME/Library/Application Support/FerminCode/secrets/loc
 chmod 600 "$HOME/Library/Application Support/FerminCode/secrets/"*-token
 ```
 
-Configuration files contain token **paths**, not token values. Do not paste a
-token into TOML, logs, shell history, or Git.
+Los archivos de configuración guardan rutas a tokens, no sus valores. No pegues
+un token en TOML, logs, historial del shell ni Git.
 
-## 3. Start the relay
+## 3. Iniciar la central
 
-1. Copy `service/config/relay.example.toml` to the ignored file
+1. Copiá `service/config/relay.example.toml` al archivo ignorado
    `service/config/relay.toml`.
-2. Replace `USERNAME`.
-3. Point the client and engine token fields at the files from step 2.
-4. Start the process:
+2. Reemplazá `USERNAME`.
+3. Apuntá los campos de tokens de cliente y engine a los archivos del paso 2.
+4. Iniciá el proceso:
 
 ```bash
 service/target/release/fermin-relay \
   --config service/config/relay.toml
 ```
 
-The relay listens on loopback port 8840. Check it:
+El relay escucha solamente en loopback, en el puerto 8840. Comprobalo:
 
 ```bash
 curl --fail http://127.0.0.1:8840/healthz
 ```
 
-## 4. Start the engine
+## 4. Iniciar el engine
 
-Copy `service/config/engine.example.toml` to the ignored file
-`service/config/engine.toml`. Then set:
+Copiá `service/config/engine.example.toml` al archivo ignorado
+`service/config/engine.toml`. Configurá:
 
-- `codexPath` to the absolute result of `command -v codex`;
-- `workspaceRoots` to only the directories a remote Codex session may use;
-- `authTokenFile` to the local API token;
-- `relay.tokenFile` to the engine token; and
-- `relay.url` to `ws://127.0.0.1:8840/v1/engine/connect` for this same-Mac
-  setup.
+- `codexPath` con la ruta absoluta devuelta por `command -v codex`;
+- `workspaceRoots` sólo con directorios que Codex remoto pueda usar;
+- `authTokenFile` con el token de la API local;
+- `relay.tokenFile` con el token del engine; y
+- `relay.url` como `ws://127.0.0.1:8840/v1/engine/connect` para este montaje
+  en la misma Mac.
 
-Start it:
+Inicialo:
 
 ```bash
 service/target/release/fermin-engine \
   --config service/config/engine.toml
 ```
 
-Call `/healthz` again. It should report a ready, attached engine.
+Consultá `/healthz` otra vez. Debe mostrar un engine conectado y listo. En ese
+momento la central ya tiene un host capaz de continuar las órdenes.
 
-## 5. Connect Desktop
+## 5. Conectar Desktop
 
-Run the client against the local relay:
+Ejecutá el cliente contra el relay local:
 
 ```bash
 cd desktop
 FERMIN_CODE_PRIMARY_RELAY_URL=http://127.0.0.1:8840 swift run FerminCode
 ```
 
-Open Settings and save the client token. For an Xcode app build, set
-`FERMIN_CODE_PRIMARY_RELAY_URL` in `desktop/project.yml` or in the generated
-target's build settings.
+Abrí Ajustes y guardá el token de cliente. Para una build de Xcode, configurá
+`FERMIN_CODE_PRIMARY_RELAY_URL` en `desktop/project.yml` o en los build
+settings del target generado.
 
-## 6. Connect Mobile
+## 6. Conectar Mobile
 
-Set your values in `mobile/project.yml`:
+Definí tus valores en `mobile/project.yml`:
 
 - `FERMIN_CODE_PRIMARY_RELAY_URL`;
-- `FERMIN_CODE_SECONDARY_RELAY_URL` if you have a second host; and
-- `FERMIN_CODE_APP_GROUP` if you use the share extension.
+- `FERMIN_CODE_SECONDARY_RELAY_URL` si tenés un segundo par relay–engine; y
+- `FERMIN_CODE_APP_GROUP` si usás la extensión de compartir.
 
-Generate the project:
+Generá el proyecto:
 
 ```bash
 cd mobile
@@ -116,22 +132,32 @@ xcodegen generate
 open KyCode.xcodeproj
 ```
 
-Choose your own development team and bundle identifiers in Xcode. Core chat
-uses the Codex login on the engine Mac; it does not need a model-provider key
-inside the iOS app. `Secrets.example.plist` only documents optional voice and
-share settings.
+Elegí tu equipo de desarrollo y bundle identifiers en Xcode. El chat principal
+usa la sesión de Codex de la Mac del engine; no necesita una clave del proveedor
+de modelos dentro de iOS. `Secrets.example.plist` documenta sólo ajustes
+opcionales de voz y compartir.
 
-## 7. Reach the relay remotely
+## 7. Acceder remotamente
 
-Keep the relay bound to `127.0.0.1`. Put one of these in front of it:
+Mantené el relay ligado a `127.0.0.1`. Colocá delante una de estas opciones:
 
-- an outbound TLS tunnel;
-- a private WireGuard or Tailscale network; or
-- a reverse proxy that you configure and protect.
+- un túnel TLS saliente;
+- una red privada WireGuard o Tailscale; o
+- un reverse proxy configurado y protegido por vos.
 
-The edge must preserve SSE streaming and WebSocket upgrades for
-`/v1/engine/connect`. Use your own hostname, keep client and engine tokens
-separate, and test both HTTPS and WSS.
+El edge debe preservar streaming SSE y upgrades WebSocket para
+`/v1/engine/connect`. Usá tu propio dominio, separá los tokens de cliente y
+engine, y probá HTTPS y WSS.
 
-Do not bind Fermín directly to `0.0.0.0` as a shortcut. This repository does
-not automate ingress.
+No ligues el relay directamente a `0.0.0.0` como atajo. Este repositorio no
+automatiza el ingreso público.
+
+## 8. Entender qué ocurre si la Mac se apaga
+
+Con relay y engine en la misma Mac, un apagado deja ambos fuera de línea. La
+central no puede tomar custodia de órdenes nuevas durante ese intervalo.
+
+Si necesitás aceptar órdenes mientras la Mac de trabajo está desconectada, el
+relay debe vivir en otra máquina disponible. El host podrá volver después y
+continuarlas. Esta guía no automatiza ese despliegue y `v0.1` sigue admitiendo
+un engine por instancia.
