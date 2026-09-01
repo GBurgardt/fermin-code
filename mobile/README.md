@@ -2,9 +2,9 @@
 
 [← Volver al README](../README.md)
 
-Es el cliente nativo SwiftUI para iOS. Envía órdenes al relay y recibe eventos
-de las sesiones remotas. No se conecta directamente con la Mac host ni con el
-engine.
+Es la app de iPhone para trabajar con las sesiones de Codex de una Mac. Manda
+órdenes al relay y recibe lo que ocurre en esas sesiones. No se conecta
+directamente con la Mac host ni con el engine.
 
 [![Fermín Mobile mostrando varias sesiones activas](../docs/images/en/mobile/mobile-many-sessions.png)](../docs/images/en/mobile/mobile-many-sessions.png)
 
@@ -35,9 +35,9 @@ sólo para descubrimiento y pruebas en una red controlada.
 
 ## Las claves de proveedores son opcionales
 
-El chat principal usa la sesión de Codex en la Mac del engine. El cliente envía
-la orden y el host la ejecuta. Esta operación no requiere una clave de OpenAI u
-otro proveedor dentro del bundle de iOS.
+El chat principal usa la sesión de Codex que ya vive en la Mac del engine.
+Mobile sólo manda la orden; el host hace el trabajo. Para ese flujo no hace
+falta guardar una clave de OpenAI ni de otro proveedor dentro de la app de iOS.
 
 Las funciones opcionales de voz, narración y compartir pueden leer
 `Resources/App/Secrets.plist`. Para probar alguna:
@@ -46,8 +46,8 @@ Las funciones opcionales de voz, narración y compartir pueden leer
 2. Reemplazá sólo los placeholders que necesite esa función.
 3. Nunca confirmes el archivo resultante.
 
-Una app iOS no puede esconder de forma segura un secreto compartido de larga
-duración. No distribuyas credenciales de proveedores en una build pública;
+Una app iOS no puede esconder de forma segura un secreto compartido durante
+mucho tiempo. No distribuyas credenciales de proveedores en una build pública;
 colocá ese intercambio detrás de un backend controlado por vos.
 
 [Conectar relay, engine y clientes paso a paso →](../docs/SELF_HOSTING.md)

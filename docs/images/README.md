@@ -2,27 +2,26 @@
 
 [← Documentación](../README.md)
 
-Las imágenes del repositorio usan contenido neutro. No contienen tokens,
+Las imágenes públicas usan contenido de demostración. No muestran tokens,
 endpoints privados, rutas personales, identificadores reales ni conversaciones
 del despliegue original.
 
 ## Arquitectura
 
-Hay dos formatos del mismo concepto:
+El mismo diagrama tiene dos formatos:
 
 - `architecture/relay-star-platform.svg` — composición horizontal para una
   pantalla amplia.
 - `architecture/relay-star-mobile.svg` — composición vertical, texto grande y
   líneas simples para una pantalla angosta.
 
-El README usa `<picture>` para elegir el formato según el ancho disponible. Los
-SVG conservan texto exacto, escalan sin perder nitidez y ofrecen título y
-descripción accesibles. Cada diagrama también funciona como enlace a su archivo
-completo.
+El README elige el formato según el ancho de pantalla. Los SVG escalan sin
+perder nitidez, incluyen título y descripción accesibles y se pueden abrir en
+su tamaño completo.
 
-Ambos muestran conexiones cliente↔relay y engine↔relay. Deliberadamente no
-muestran conexiones directas cliente→engine. El formato mobile aclara además
-que la estrella es la forma objetivo y que `v0.1` usa un relay por host.
+Ambos muestran la misma regla: los clientes y los engines hablan con el relay;
+no hablan directamente entre sí. El formato mobile también aclara que la
+estrella es el diseño futuro y que `v0.1` usa un relay por host.
 
 Los dos diagramas actuales son vectores nativos. El formato vertical fue
 revisado en un viewport de iPhone.
@@ -33,10 +32,9 @@ revisado en un viewport de iPhone.
 - `en/mobile/mobile-sessions.png` — la lista de sesiones.
 - `en/mobile/mobile-many-sessions.png` — varias sesiones trabajando.
 
-Las referencias originales fueron aportadas por el propietario. La captura
-principal del README aparece sola y ocupa el ancho disponible. Las vistas
-secundarias quedan dentro de bloques desplegables para no convertir la lectura
-mobile en una galería interminable.
+La captura principal del README aparece sola y ocupa el ancho disponible. Las
+vistas secundarias quedan dentro de bloques desplegables para que la lectura en
+el iPhone siga siendo cómoda.
 
 ## Capturas Desktop
 

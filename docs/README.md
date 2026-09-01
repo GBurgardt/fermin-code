@@ -2,42 +2,43 @@
 
 [← Volver al README](../README.md)
 
-La documentación está organizada por función. Cada documento distingue el
-comportamiento de `v0.1` de la arquitectura objetivo.
+La documentación está separada por tema. En cada documento vas a encontrar qué
+hace `v0.1` hoy y qué parte pertenece al diseño futuro.
 
 ## Arquitectura
 
 [Arquitectura](ARCHITECTURE.md)
 
-Describe el relay, el engine, los clientes, Codex App Server, el ciclo de una
-orden y los mecanismos de recuperación.
+Explica qué lugar ocupan el relay, el engine, los clientes y Codex App Server.
+También sigue una orden desde que sale del cliente hasta que vuelve como evento.
 
 ## Instalación
 
 [Autoalojamiento](SELF_HOSTING.md)
 
-Configura la topología local mínima con relay, engine y Codex en una misma Mac.
-Incluye Desktop, Mobile y acceso remoto.
+Te guía por la instalación más simple: relay, engine y Codex en una misma Mac.
+Después conecta Desktop, Mobile y el acceso remoto.
 
 ## Integración
 
 [API](API.md)
 
-Documenta autenticación, rutas, estados de órdenes, eventos y reconexión.
+Reúne la autenticación, las rutas, los estados de una orden y la forma de volver
+a conectarse sin perder eventos.
 
 ## Seguridad
 
 [Modelo de seguridad](SECURITY_MODEL.md)
 
-Define el nivel de acceso, los controles implementados, las responsabilidades
-del operador y las capacidades no incluidas.
+Explica qué acceso obtiene Fermín, qué controles ya existen, qué debe cuidar
+quien lo instala y qué seguridad todavía no ofrece esta versión.
 
 ## Descripción pública
 
 [Descripción pública](LAUNCH.md)
 
-Contiene una definición técnica, un resumen ejecutivo, una explicación no
-técnica y límites para la comunicación pública.
+Reúne distintas formas de explicar Fermín y marca los límites que deben
+mantenerse al hablar de la versión pública.
 
 ## Contribuciones
 

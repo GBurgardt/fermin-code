@@ -4,17 +4,18 @@
 
 ## Resumen
 
-Fermín transporta órdenes hacia una Mac con acceso a archivos y procesos. El
-relay es el punto de entrada remoto y el engine es la autoridad local del host.
+Fermín puede llevar una orden hasta una Mac que tiene acceso a archivos y
+procesos. Por eso la seguridad no es secundaria: el relay recibe las órdenes y
+el engine decide qué puede ocurrir dentro del host.
 
 ## Nivel de acceso
 
-Fermín puede solicitar que Codex lea archivos, modifique un workspace y ejecute
-comandos en una Mac autorizada. Un token de cliente puede habilitar operaciones
-con ese nivel de acceso.
+Desde Fermín se le puede pedir a Codex que lea archivos, cambie un workspace o
+ejecute comandos en una Mac autorizada. Quien tiene un token de cliente puede
+llegar a operaciones con ese nivel de acceso.
 
-Si no confiarías ese nivel de acceso a un dispositivo, a la entrada de red o a
-quien posee un token, no lo conectes.
+Si no le darías ese acceso a un dispositivo o a quien guarda un token, no lo
+conectes al relay.
 
 ## Controles implementados
 
@@ -36,8 +37,8 @@ La versión pública ya aplica estos límites:
 
 ## Qué debe proteger quien lo opera
 
-El repositorio no puede tomar decisiones de despliegue por vos. Quien opera la
-instalación debe:
+El repositorio no puede decidir cómo protegés tu red y tu Mac. Quien instala
+Fermín debe:
 
 1. Usá HTTPS y WSS en cada conexión que salga de loopback.
 2. Generá tokens aleatorios y separados de al menos 32 caracteres.
@@ -53,9 +54,9 @@ ni Codex App Server directamente a Internet.
 
 ## Seguridad de una central con varios hosts
 
-La estrella N×M describe la arquitectura objetivo, pero `v0.1` no implementa
-un relay multi-host compartido. Antes de permitir que una central derive órdenes
-hacia varios hosts necesita, como mínimo:
+La estrella N×M describe el diseño futuro, pero `v0.1` todavía no comparte un
+relay entre varios hosts. Antes de que una central pueda hacerlo de forma
+segura necesita, como mínimo:
 
 - identidad estable de cuenta, cliente y host;
 - autorización por host, workspace, sesión y operación;
@@ -65,13 +66,13 @@ hacia varios hosts necesita, como mínimo:
 - auditoría del origen y destino de cada orden; y
 - límites y cuotas por cuenta.
 
-No alcanza con agregar `hostId` a una orden. Hasta que existan esos controles,
-no uses el relay actual como servicio multi-tenant ni conectes engines de
-personas distintas a una instancia compartida.
+Agregar `hostId` a una orden no alcanza. Hasta que existan esos controles, no
+uses el relay actual como servicio multi-tenant ni conectes engines de personas
+distintas a una misma instancia.
 
 ## Funciones que esta versión no incluye
 
-No asumas que existen estas capas:
+Esta versión todavía no incluye:
 
 - cuentas u OAuth/OIDC;
 - pairing de dispositivos;
@@ -85,10 +86,10 @@ No asumas que existen estas capas:
 
 ## Una orden guardada puede ejecutarse más tarde
 
-Si el host está fuera de línea, una orden guardada puede ejecutarse al
-reconectar. Esta versión no ofrece una política general de vencimiento y
-reconfirmación para órdenes demoradas. Encolá sólo trabajo que siga siendo
-seguro más tarde.
+Si el host está fuera de línea, una orden guardada puede ejecutarse cuando
+vuelva. Esta versión no ofrece una regla general para vencer o volver a
+confirmar órdenes demoradas. Encolá sólo trabajo que siga siendo seguro más
+tarde.
 
 Una Mac dormida, apagada o aislada de la red sigue indisponible. Las funciones
 de wake de red no son una garantía.

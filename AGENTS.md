@@ -12,16 +12,17 @@ La arquitectura objetivo es una estrella N×M. El código `v0.1` admite una
 generación activa de engine por instancia de relay. No documentes routing
 multi-host en una sola instancia como si ya estuviera implementado.
 
-Escribí la documentación con tono neutral, preciso y sobrio. Empezá por la
-definición, el alcance y el comportamiento observable. Documentá después los
-requisitos, límites y procedimientos. Usá ejemplos sólo cuando aclaren una
-operación concreta. Evitá historias personales, slogans, metáforas, preguntas
-retóricas, entusiasmo promocional y promesas.
+Escribí la documentación con una voz clara, precisa y natural. Empezá por la
+idea más fácil de entender y explicá un concepto por vez. Cuando aparezca un
+término técnico, decí en la misma sección qué significa en la práctica.
+Documentá requisitos, límites y procedimientos sin volver el texto distante.
+Evitá slogans, entusiasmo promocional, metáforas forzadas y promesas.
 
 Usá presente indicativo para describir el sistema e imperativo para los pasos de
-instalación. Separá siempre capacidad implementada, arquitectura objetivo y
-capacidad no incluida. No describas un beneficio sin indicar el mecanismo y las
-condiciones que lo hacen posible.
+instalación. Podés hablarle directamente al lector y usar una situación real
+cuando ayude a entender una operación. Separá siempre capacidad implementada,
+arquitectura objetivo y capacidad no incluida. No describas un beneficio sin
+indicar el mecanismo y las condiciones que lo hacen posible.
 
 La documentación pública es mobile-first. El README debe entenderse a 390 px
 sin zoom ni scroll horizontal. Preferí listas apiladas antes que tablas anchas,
@@ -29,9 +30,9 @@ diagramas verticales antes que ASCII horizontal y bloques desplegables para
 material secundario. Cada imagen informativa necesita texto alternativo, una
 explicación cercana y un enlace a la resolución completa.
 
-La definición base es: “Fermín es un sistema autoalojado para operar sesiones de
-Codex en una Mac remota. El relay persiste las órdenes y el engine local las
-entrega a Codex”.
+La definición base es: “Fermín te permite trabajar con las sesiones de Codex
+que corren en una Mac desde distintos clientes. El relay guarda cada orden y el
+engine de la Mac se la entrega a Codex”.
 
 No agregues secretos de proveedores, tokens, identidades de firma, dominios de
 producción, hostnames privados ni rutas personales.

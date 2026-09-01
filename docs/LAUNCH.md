@@ -2,14 +2,17 @@
 
 [← Documentación](README.md)
 
-Este documento define cómo describir Fermín. No es una hoja de ruta ni un
-calendario de producto.
+Este documento reúne formas claras de explicar Fermín. No es una hoja de ruta
+ni un calendario de producto.
 
 ## Definición
 
-Fermín es un sistema autoalojado para operar sesiones de Codex en una Mac
-remota. Los clientes envían órdenes a un relay durable. El relay las persiste,
-las entrega al engine correspondiente y conserva los eventos resultantes.
+Fermín te permite trabajar con las sesiones de Codex que corren en una Mac
+desde el iPhone, otra Mac o cualquier cliente conectado al relay.
+
+El relay queda en el medio. Recibe cada orden, la guarda y se la entrega al
+engine de la Mac. Después conserva lo que ocurrió para que cualquier cliente
+pueda volver a esa historia.
 
 ```text
 Cliente
@@ -21,55 +24,55 @@ Engine del host
 Codex App Server
 ```
 
-Codex realiza el razonamiento y la ejecución. Fermín administra el transporte,
-la persistencia y la recuperación del estado remoto.
+Codex piensa y ejecuta el trabajo. Fermín cuida el camino de la orden y la
+historia que queda alrededor.
 
 ## Descripción general
 
-El relay puede ejecutarse en una Mac o en otro servidor disponible. Cada Mac
-que ejecuta Codex necesita un engine local.
+Podés ejecutar el relay en una Mac o en otro servidor que esté disponible. Cada
+Mac que ejecuta Codex necesita su propio engine, un programa local que conecta
+esa Mac con el relay.
 
-Los clientes se conectan al relay y no al engine. Cuando un cliente envía una
-orden, el relay:
+Los clientes hablan siempre con el relay, nunca directamente con el engine.
+Cuando mandás una orden, el relay:
 
-1. autentica la solicitud;
-2. persiste la orden;
-3. la entrega al engine cuando está disponible; y
-4. conserva los eventos para que los clientes recuperen el estado.
+1. verifica el token;
+2. guarda la orden;
+3. se la entrega al engine cuando está disponible; y
+4. conserva los eventos para que los clientes sepan qué ocurrió.
 
-El término *durable* indica que la orden se guarda antes de confirmar su
-aceptación. El relay no se limita a reenviar datos durante una conexión activa.
+Le decimos *durable* porque guarda la orden antes de responder `accepted`. No se
+limita a pasar datos mientras una conexión está abierta.
 
 ## Resumen ejecutivo
 
-> Fermín permite operar sesiones de Codex que se ejecutan en una Mac remota.
-> Mobile, Desktop u otro cliente envían órdenes a un relay autoalojado. El
-> relay persiste cada orden, la entrega al engine del host y conserva los
-> eventos. Esto permite reintentar, reconectar clientes y recuperar el estado
-> sin publicar Codex App Server directamente en Internet.
+> Fermín permite trabajar con las sesiones de Codex de una Mac desde Mobile,
+> Desktop u otro cliente. Todos hablan con un relay autoalojado que guarda cada
+> orden antes de aceptarla, se la entrega al engine de la Mac y conserva lo que
+> ocurrió. Así los clientes pueden reintentar, desconectarse y volver sin
+> publicar Codex App Server directamente en Internet.
 
 ## Explicación no técnica
 
-> Fermín coloca una central entre los dispositivos del usuario y la computadora
-> que ejecuta Codex. La central guarda cada orden y la entrega a la computadora
-> configurada. Si el cliente se desconecta, puede volver y consultar lo que
-> ocurrió.
+> Fermín pone una central entre tus dispositivos y la Mac donde trabaja Codex.
+> Mandás una orden, la central la guarda y se la pasa a esa Mac. Si cerrás el
+> cliente o perdés la conexión, después podés volver y ver qué ocurrió.
 
 ## Definición breve
 
-> **Fermín es un relay autoalojado que persiste órdenes y las entrega a una Mac
-> que ejecuta Codex.**
+> **Fermín guarda las órdenes que mandás desde tus clientes y se las entrega a
+> la Mac donde corre Codex.**
 
 ## Resultado operativo
 
-Un usuario puede enviar una orden desde Mobile, cerrar el cliente y recuperar
-los eventos más tarde. Después de que el relay responde `accepted`, la orden
-ya está persistida.
+Podés mandar una orden desde Mobile, cerrar la app y recuperar los eventos más
+tarde. Cuando el relay responde `accepted`, la orden ya quedó guardada.
 
-Este comportamiento está sujeto a dos condiciones:
+Para que esto funcione se tienen que cumplir dos condiciones:
 
-- el relay debe continuar disponible para aceptar órdenes nuevas; y
-- el host debe volver a conectarse para que Codex ejecute trabajo pendiente.
+- el relay tiene que seguir disponible para recibir órdenes nuevas; y
+- el host tiene que volver a conectarse para que Codex ejecute el trabajo
+  pendiente.
 
 Fermín no enciende una Mac apagada y no sustituye la política de sandbox y
 aprobaciones de Codex.
@@ -77,10 +80,11 @@ aprobaciones de Codex.
 ## Capacidades verificables en `v0.1`
 
 - Los clientes se conectan al relay, no al engine.
-- El relay persiste órdenes y eventos.
-- Las claves de idempotencia permiten reintentos sin crear otra orden.
-- Cada cliente puede reanudar eventos desde su cursor.
-- Leases y fencing controlan la autoridad de la conexión del engine.
+- El relay guarda órdenes y eventos.
+- Una clave de idempotencia permite reintentar sin crear otra orden.
+- Cada cliente recuerda su cursor y retoma la historia desde ahí.
+- Leases y fencing evitan que una conexión vieja del engine siga teniendo
+  autoridad.
 - El engine se ejecuta junto a Codex en la Mac host.
 - Mobile y Desktop implementan el contrato del relay.
 
@@ -89,15 +93,16 @@ entre endpoints Primary y Secondary.
 
 ## Arquitectura objetivo
 
-La arquitectura objetivo registra varios hosts en un relay. Cada orden indica
-el host de destino y el relay selecciona el engine autorizado.
+El diseño futuro registra varios hosts en un mismo relay. Cada orden indica en
+qué host debe ejecutarse y el relay selecciona el engine correspondiente.
 
-Esta capacidad requiere identidad, autorización, almacenamiento y fencing por
-host. No está implementada en `v0.1` y no tiene una fecha de entrega publicada.
+Para hacerlo bien hacen falta identidad, autorización, almacenamiento y fencing
+por host. No está implementado en `v0.1` y no tiene una fecha de entrega
+publicada.
 
 ## Capacidades no incluidas
 
-No describas la versión actual como si incluyera:
+La versión actual no incluye:
 
 - instalación de un paso;
 - relay alojado;
@@ -134,13 +139,15 @@ estado del repositorio.
 <details>
 <summary><strong>X</strong></summary>
 
-> Fermín `v0.1` está disponible como proyecto open source.
+> Publiqué Fermín `v0.1` como proyecto open source.
 >
-> Es un sistema autoalojado para operar sesiones de Codex en una Mac remota.
-> Incluye un relay durable, un engine local y clientes para iOS y macOS.
+> Me permite trabajar con las sesiones de Codex de una Mac desde el iPhone u
+> otra Mac. Incluye un relay durable, un engine local y clientes para iOS y
+> macOS.
 >
-> El relay persiste las órdenes antes de aceptarlas y conserva los eventos para
-> reconexión y replay. La versión actual usa un par relay–engine por host.
+> El relay guarda cada orden antes de aceptarla y conserva la historia para que
+> los clientes puedan desconectarse y volver. La versión actual usa un par
+> relay–engine por host.
 >
 > [github.com/GBurgardt/fermin-code](https://github.com/GBurgardt/fermin-code)
 

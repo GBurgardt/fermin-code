@@ -2,8 +2,8 @@
 
 [← Documentación](README.md)
 
-Esta guía configura la topología local mínima: una Mac ejecuta el relay, el
-engine y Codex.
+Esta guía arma la instalación local más simple: relay, engine y Codex corren en
+la misma Mac.
 
 No instala servicios de fondo, no crea un dominio público y no configura firma
 de Apple.
@@ -14,9 +14,9 @@ Necesitás una Mac con Rust 1.92 o posterior, Xcode Command Line Tools y un Code
 CLI compatible ya autenticado. Xcode completo y XcodeGen sólo son necesarios
 si también vas a generar Mobile.
 
-La guía tiene ocho pasos. Primero verifica el funcionamiento local. El acceso
-remoto se configura al final para separar los problemas del servicio de los
-problemas de red.
+Son ocho pasos. Primero hacemos funcionar todo dentro de la Mac. El acceso
+remoto queda para el final, así un problema de red no se confunde con un
+problema del servicio.
 
 ## Topología resultante
 
@@ -30,13 +30,13 @@ Engine local
 Codex App Server
 ```
 
-Al terminar, un cliente podrá mandar una orden al relay local. El relay la
-guardará y el engine de esa misma Mac la entregará a Codex.
+Al terminar, vas a poder mandar una orden al relay local. El relay la guarda y
+el engine de esa misma Mac se la entrega a Codex.
 
-En `v0.1`, una instancia de relay acepta una generación activa de engine. Para
-operar dos Macs hoy, desplegá un par relay–engine por Mac y configurá los dos
-endpoints en Primary y Secondary. Una única central que derive hacia muchos
-hosts todavía pertenece a la arquitectura objetivo.
+En `v0.1`, cada relay trabaja con una generación activa de engine. Para usar dos
+Macs hoy, levantá un par relay–engine por Mac y configurá ambos endpoints como
+Primary y Secondary. La central única que elige entre varios hosts todavía es
+parte del diseño futuro.
 
 ## 1. Comprobar la Mac host
 
@@ -54,8 +54,8 @@ Compilá el servicio y comprobá su conexión local con Codex:
 (cd service && cargo run --bin ferminctl -- doctor --codex "$(command -v codex)")
 ```
 
-No sigas hasta que `ferminctl doctor` termine correctamente. Este paso confirma
-que la Mac host puede hablar con Codex antes de agregar el relay.
+No sigas hasta que `ferminctl doctor` termine correctamente. Es más fácil
+resolver primero la conexión local con Codex y agregar el relay después.
 
 ## 2. Crear tres tokens
 
@@ -94,7 +94,7 @@ service/target/release/fermin-relay \
   --config service/config/relay.toml
 ```
 
-El relay escucha solamente en loopback, en el puerto 8840. Comprobalo:
+El relay escucha solamente dentro de la Mac, en el puerto 8840. Comprobalo:
 
 ```bash
 curl --fail http://127.0.0.1:8840/healthz
@@ -163,22 +163,22 @@ Mantené el relay ligado a `127.0.0.1`. Colocá delante una de estas opciones:
 - una red privada WireGuard o Tailscale; o
 - un reverse proxy configurado y protegido por vos.
 
-El edge debe preservar streaming SSE y upgrades WebSocket para
+La capa de acceso debe preservar streaming SSE y upgrades WebSocket para
 `/v1/engine/connect`. Usá tu propio dominio, separá los tokens de cliente y
 engine, y probá HTTPS y WSS.
 
-No ligues el relay directamente a `0.0.0.0` como atajo. Este repositorio no
-automatiza el ingreso público.
+No expongas el relay directamente en `0.0.0.0` como atajo. Este repositorio no
+configura el acceso público por vos.
 
 ## 8. Entender qué ocurre si la Mac se apaga
 
-Con relay y engine en la misma Mac, un apagado deja ambos fuera de línea. La
-central no puede tomar custodia de órdenes nuevas durante ese intervalo.
+Si relay y engine viven en la misma Mac, al apagarla caen los dos. Durante ese
+tiempo, la central no puede recibir ni guardar órdenes nuevas.
 
-Si necesitás aceptar órdenes mientras la Mac de trabajo está desconectada, el
-relay debe vivir en otra máquina disponible. El host podrá volver después y
-continuarlas. Esta guía no automatiza ese despliegue y `v0.1` sigue admitiendo
-un engine por instancia.
+Si querés recibir órdenes mientras la Mac de trabajo está desconectada, el
+relay tiene que vivir en otra máquina disponible. El host podrá volver después
+y continuar el trabajo. Esta guía no automatiza ese despliegue y `v0.1` sigue
+admitiendo un engine por instancia.
 
 ## Comprobación final
 
@@ -189,8 +189,8 @@ Antes de llamar terminada a la instalación, verificá estas cuatro cosas:
 - una orden aparece en Codex y devuelve eventos; y
 - cerrar y volver a abrir el cliente recupera la historia.
 
-La prueba local verifica el relay, el engine y Codex. El túnel o proxy verifica
-el acceso remoto.
+Si estas cuatro pruebas pasan, el camino local está listo. El túnel o proxy se
+prueba aparte porque sólo agrega el acceso remoto.
 
 ---
 
