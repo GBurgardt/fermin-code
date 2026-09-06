@@ -19,13 +19,15 @@ Conservá la frontera del producto:
   herramientas dentro del relay.
 - Los clientes no deben conectarse directamente al engine.
 
-## Estado actual y arquitectura objetivo
+## Menos código que mantener
 
-Fermín se describe como una estrella N×M: clientes alrededor de un relay
-central y engines en las Macs. `v0.1` admite una generación activa de engine
-por instancia de relay. Una propuesta de routing multi-host debe incluir
-identidad, autorización, almacenamiento y fencing por host; no alcanza con
-agregar un campo `hostId`.
+Un relay trabaja con un engine activo. Los perfiles de los clientes permiten
+usar dos pares independientes; no hay una arquitectura futura comprometida.
+
+Son bienvenidos los recortes de código sin uso, implementaciones duplicadas y
+configuración redundante. Conservá las funciones activas, el esquema de datos y
+los contratos. Mover código a otra carpeta no basta para simplificarlo, y
+eliminar mecanismos de recuperación no cuenta como una mejora.
 
 ## Documentación
 
@@ -35,7 +37,7 @@ La documentación usa un tono claro, directo y natural.
 2. Definí el componente o la operación con palabras comunes.
 3. Explicá qué ocurre en la práctica.
 4. Documentá requisitos, condiciones y estados de falla.
-5. Separá la implementación actual de la arquitectura objetivo.
+5. Separá la implementación actual de cualquier propuesta.
 
 Usá “relay durable”, “host” y “engine” cuando aporten precisión, pero definilos
 la primera vez y no los uses donde alcanza una palabra común como “guardar”,

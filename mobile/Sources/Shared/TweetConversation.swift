@@ -1,6 +1,8 @@
 import Foundation
 import SwiftData
 
+// Compiled into both targets; keep the persisted SwiftData schema identical.
+
 @Model
 final class TweetConversation {
     var id: UUID

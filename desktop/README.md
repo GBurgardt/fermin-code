@@ -19,9 +19,8 @@ detiene un trabajo que ya está en marcha.
 
 <sub>La imagen se puede abrir en resolución completa.</sub>
 
-El target y algunos identificadores siguen usando el nombre interno Fermín Code
-por compatibilidad. El nombre público del producto es Fermín; este cambio
-documental no renombra código ni bundles operativos.
+Los targets y bundle identifiers se mantienen; la presentación pública no
+requiere renombrar identidades operativas.
 
 ## Probar y ejecutar
 

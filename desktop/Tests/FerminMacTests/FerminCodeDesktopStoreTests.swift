@@ -4423,6 +4423,11 @@ final class FerminCodeDesktopStoreTests: XCTestCase {
             Task { await fixture.relay.releaseAllHeldDetailFetches() }
         }
         fixture.store.start()
+        // Selection must happen after startup refreshAll finishes. Otherwise
+        // its trailing detail refresh can consume the numbered recovery request.
+        try await waitUntil {
+            !fixture.store.isRefreshing && fixture.store.sourceStatuses[.personal]?.phase == .online
+        }
         try await selectBaseSession(in: fixture)
         try await waitUntil { fixture.store.detailLoadState == .loaded }
         try await waitUntilAsync { await fixture.relay.activeStreamCount() == 1 }
@@ -5185,24 +5190,28 @@ final class FerminCodeDesktopStoreTests: XCTestCase {
 
     private func waitUntil(
         timeoutIterations: Int = 300,
+        file: StaticString = #filePath,
+        line: UInt = #line,
         _ predicate: @MainActor () -> Bool
     ) async throws {
         for _ in 0..<timeoutIterations {
             if predicate() { return }
             try await Task.sleep(nanoseconds: 2_000_000)
         }
-        XCTFail("La condición esperada no se cumplió.")
+        XCTFail("La condición esperada no se cumplió.", file: file, line: line)
     }
 
     private func waitUntilAsync(
         timeoutIterations: Int = 300,
+        file: StaticString = #filePath,
+        line: UInt = #line,
         _ predicate: () async -> Bool
     ) async throws {
         for _ in 0..<timeoutIterations {
             if await predicate() { return }
             try await Task.sleep(nanoseconds: 2_000_000)
         }
-        XCTFail("La condición async esperada no se cumplió.")
+        XCTFail("La condición async esperada no se cumplió.", file: file, line: line)
     }
 }
 

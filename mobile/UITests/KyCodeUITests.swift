@@ -1,6 +1,69 @@
 import XCTest
 
 final class KyCodeUITests: XCTestCase {
+    func testLocalRelayContinuesDesktopHandoff() throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let relayURL = environment["FERMIN_LOCAL_RELAY_URL"],
+              let url = URL(string: relayURL), url.scheme == "http",
+              ["127.0.0.1", "localhost"].contains(url.host ?? "") else {
+            throw XCTSkip("Local handoff requires an explicitly configured disposable loopback relay.")
+        }
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launch()
+        defer { app.terminate() }
+        let menu = app.buttons["dashboard-floating-menu"]
+        XCTAssertTrue(menu.waitForExistence(timeout: 20))
+        menu.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        let preferences = app.buttons["Desktop y preferencias"]
+        XCTAssertTrue(preferences.waitForExistence(timeout: 5))
+        preferences.tap()
+        XCTAssertTrue(app.staticTexts[relayURL].waitForExistence(timeout: 10),
+                      "Refuse to send to a client that is not connected to the disposable relay.")
+        app.buttons["connection-sheet-done"].tap()
+        app.buttons["dashboard-search-action"]
+            .coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        let search = app.textFields["dashboard-search"]
+        XCTAssertTrue(search.waitForExistence(timeout: 20))
+        search.tap()
+        search.typeText(environment["FERMIN_LOCAL_SESSION_NAME"] ?? "QA Handoff")
+        let card = app.buttons.matching(NSPredicate(
+            format: "identifier BEGINSWITH %@", "session-card-messaging-"
+        )).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 30))
+        let cardIdentifier = card.identifier
+        card.tap()
+        XCTAssertTrue(app.staticTexts["DESKTOP_HANDOFF_OK"].waitForExistence(timeout: 30))
+        let composer = app.textFields["composer-message"]
+        XCTAssertTrue(composer.waitForExistence(timeout: 10))
+        composer.tap()
+        composer.typeText("Reply exactly MOBILE_HANDOFF_OK. No punctuation, explanation, or tools.")
+        let send = app.buttons["composer-send-message"]
+        XCTAssertTrue(send.waitForExistence(timeout: 5))
+        send.tap()
+        let response = app.staticTexts["MOBILE_HANDOFF_OK"]
+        XCTAssertTrue(response.waitForExistence(timeout: 120))
+        XCTAssertTrue(app.descendants(matching: .any)["session-processing-indicator"]
+            .waitForNonExistence(timeout: 30))
+        XCTAssertEqual(app.staticTexts.matching(NSPredicate(
+            format: "label == %@", "MOBILE_HANDOFF_OK"
+        )).count, 1)
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "mobile-desktop-handoff"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+        let hierarchy = XCTAttachment(string: app.debugDescription)
+        hierarchy.name = "mobile-desktop-handoff-hierarchy"
+        hierarchy.lifetime = .keepAlways
+        add(hierarchy)
+        app.terminate()
+        app.launch()
+        let reopenedCard = app.buttons[cardIdentifier]
+        XCTAssertTrue(reopenedCard.waitForExistence(timeout: 30))
+        reopenedCard.tap()
+        XCTAssertTrue(app.staticTexts["MOBILE_HANDOFF_OK"].waitForExistence(timeout: 30))
+    }
+
     func testSubagentParentNoteRequiresARealChangeBeforeSaving() throws {
         let app = XCUIApplication()
         app.launchEnvironment["KYCODE_UI_TEST_SUBAGENT_PARENT_NOTE"] = "1"
@@ -2434,9 +2497,9 @@ final class KyCodeUITests: XCTestCase {
             throw XCTSkip("\(tokenEnvironmentKey) is required for the authorized clean-relay QA run.")
         }
         let displayName = profileId == "personal" ? "Mac personal" : "Puky"
-        let baseURL = profileId == "personal"
+        let baseURL = environment["KYCODE_LIVE_RELAY_URL"] ?? (profileId == "personal"
             ? "https://relay.example.com/fermin-code"
-            : "https://relay.example.com/fermin-code-puky"
+            : "https://relay.example.com/fermin-code-puky")
         let suffix = String(Int(Date().timeIntervalSince1970)).suffix(8)
         let sessionName = "QA Mobile \(profileId) \(suffix)"
         let responseMarker = "MOBILE_\(profileId.uppercased())_\(suffix)"
@@ -2466,7 +2529,7 @@ final class KyCodeUITests: XCTestCase {
 
         let dashboardMenu = app.buttons["dashboard-floating-menu"]
         XCTAssertTrue(dashboardMenu.waitForExistence(timeout: 10))
-        dashboardMenu.tap()
+        dashboardMenu.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
         let preferences = app.buttons["Desktop y preferencias"]
         XCTAssertTrue(preferences.waitForExistence(timeout: 5))
         preferences.tap()
@@ -2494,7 +2557,7 @@ final class KyCodeUITests: XCTestCase {
             0,
             "\(displayName) exposed sessions that were not created by Fermín Code after the clean reset."
         )
-        let create = app.buttons["dashboard-new-session"]
+        let create = app.buttons["Nueva sesión"]
         XCTAssertTrue(create.waitForExistence(timeout: 10))
         let createReady = XCTNSPredicateExpectation(
             predicate: NSPredicate(format: "enabled == true AND hittable == true"),
@@ -2529,6 +2592,10 @@ final class KyCodeUITests: XCTestCase {
         let windowId = String(cardIdentifier.dropFirst(cardPrefix.count))
         newCard.tap()
 
+        let model = app.buttons["detail-runtime-model-switcher"]
+        XCTAssertTrue(model.waitForExistence(timeout: 15))
+        XCTAssertTrue((model.value as? String)?.contains("LUNA") == true,
+                      "Live QA must use only gpt-5.6-luna before sending any message.")
         let composer = app.textFields["composer-message"]
         XCTAssertTrue(composer.waitForExistence(timeout: 30))
         composer.tap()
@@ -2581,6 +2648,9 @@ final class KyCodeUITests: XCTestCase {
         let back = navigationBar.buttons.firstMatch
         XCTAssertTrue(back.exists)
         back.tap()
+        let actions = app.buttons["session-actions-\(windowId)"]
+        XCTAssertTrue(actions.waitForExistence(timeout: 10))
+        actions.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
         let delete = app.buttons["delete-session-\(windowId)"]
         XCTAssertTrue(delete.waitForExistence(timeout: 15))
         delete.tap()
@@ -2960,6 +3030,9 @@ final class KyCodeUITests: XCTestCase {
     ) throws {
         let card = try searchForSession(named: session.target.sessionName, in: app)
         XCTAssertEqual(card.identifier, "session-card-messaging-\(session.combinedWindowId)")
+        let actions = app.buttons["session-actions-\(session.combinedWindowId)"]
+        XCTAssertTrue(actions.waitForExistence(timeout: 10))
+        actions.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
         let delete = app.buttons["delete-session-\(session.combinedWindowId)"]
         XCTAssertTrue(delete.waitForExistence(timeout: 10))
         delete.tap()

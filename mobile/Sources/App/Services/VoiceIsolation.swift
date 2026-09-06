@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 
 enum VoiceIsolationMode: String, Codable, CaseIterable, Sendable {
@@ -68,32 +67,6 @@ enum VoiceIsolationPreferences {
     }
 }
 
-@MainActor
-final class VoiceIsolationSettingsStore: ObservableObject {
-    @Published private(set) var mode: VoiceIsolationMode
-    @Published private(set) var verificationThreshold: Float
-
-    private let defaults: UserDefaults
-
-    init(defaults: UserDefaults = .standard) {
-        self.defaults = defaults
-        mode = VoiceIsolationPreferences.loadMode(from: defaults)
-        verificationThreshold = VoiceIsolationPreferences.loadThreshold(from: defaults)
-    }
-
-    func setMode(_ mode: VoiceIsolationMode) {
-        guard self.mode != mode else { return }
-        self.mode = mode
-        VoiceIsolationPreferences.saveMode(mode, to: defaults)
-    }
-
-    func setVerificationThreshold(_ threshold: Float) {
-        let normalized = VoiceIsolationPreferences.clampedThreshold(threshold)
-        guard verificationThreshold != normalized else { return }
-        verificationThreshold = normalized
-        VoiceIsolationPreferences.saveThreshold(normalized, to: defaults)
-    }
-}
 
 struct VoiceTranscriptionSegment: Codable, Equatable, Identifiable, Sendable {
     let id: String
