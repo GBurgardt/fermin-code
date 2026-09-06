@@ -73,6 +73,71 @@ final class FerminCodeDesktopUITests: XCTestCase, @unchecked Sendable {
         }
     }
 
+    // Opt-in, loopback-only handoff checks. Run against a disposable .qa app
+    // and relay; these deliberately leave the conversation for the other client.
+    private func prepareLocalHandoff() throws -> LiveSessionRecord {
+        let environment = ProcessInfo.processInfo.environment
+        guard let relayURL = environment["FERMIN_LOCAL_RELAY_URL"],
+              let url = URL(string: relayURL), url.scheme == "http",
+              ["127.0.0.1", "localhost"].contains(url.host ?? ""),
+              let appID = environment["FERMIN_LOCAL_APP_ID"], appID.hasSuffix(".qa") else {
+            throw XCTSkip("Local handoff requires an explicit loopback relay and a separate .qa app.")
+        }
+        prepareTest()
+        app = XCUIApplication(bundleIdentifier: appID)
+        app.launchEnvironment["FERMIN_CODE_PRIMARY_RELAY_URL"] = relayURL
+        app.launchEnvironment["FERMIN_CODE_SECONDARY_RELAY_URL"] = relayURL
+        launchApp()
+        try selectProfile(DesktopAX.personalProfile)
+        let badge = try requireElement(DesktopAX.connection(.personal), in: app)
+        XCTAssertTrue(waitUntil(timeout: 30) {
+            let status = self.stringValue(of: badge).lowercased()
+            return status.contains("online") || status.contains("conectado")
+        })
+        return LiveSessionRecord(
+            source: .personal,
+            name: environment["FERMIN_LOCAL_SESSION_NAME"] ?? "QA Handoff",
+            marker: "DESKTOP_HANDOFF_OK"
+        )
+    }
+
+    func testLocalRelayStartsHandoff() throws {
+        let record = try prepareLocalHandoff()
+        try createSession(record)
+        try sendAndSettle(record)
+        attachLocalHandoffEvidence("desktop-handoff-start")
+    }
+
+    func testLocalRelayContinuesMobileHandoff() throws {
+        let record = try prepareLocalHandoff()
+        try setSearch(record.name)
+        let row = try XCTUnwrap(waitForSessionRow(
+            named: record.name, source: .personal, in: app, timeout: 30
+        ))
+        row.click()
+        XCTAssertTrue(exactLabel("MOBILE_HANDOFF_OK", in: app).waitForExistence(timeout: 30))
+        let returnRecord = LiveSessionRecord(
+            source: .personal, name: record.name, marker: "DESKTOP_RETURN_OK"
+        )
+        try sendAndSettle(returnRecord)
+        app.terminate()
+        launchApp()
+        XCTAssertTrue(exactLabel("DESKTOP_RETURN_OK", in: app).waitForExistence(timeout: 30))
+        XCTAssertFalse(element(DesktopAX.error, in: app).exists)
+        attachLocalHandoffEvidence("desktop-handoff-return")
+    }
+
+    private func attachLocalHandoffEvidence(_ name: String) {
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = name
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+        let hierarchy = XCTAttachment(string: app.debugDescription)
+        hierarchy.name = "\(name)-hierarchy"
+        hierarchy.lifetime = .keepAlways
+        add(hierarchy)
+    }
+
     func testCaptureRepositoryScreenshots() throws {
         guard let outputPath = ProcessInfo.processInfo.environment["FERMIN_REPOSITORY_SCREENSHOT_DIR"],
               !outputPath.isEmpty else {

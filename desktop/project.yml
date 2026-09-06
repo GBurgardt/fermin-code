@@ -56,9 +56,7 @@ targets:
     type: framework
     platform: macOS
     sources:
-      - path: Sources/FerminCore/FerminCodeRelay
-      - path: Sources/FerminCore/Persistence/TokenVault.swift
-      - path: Sources/FerminCore/Protocol/JSONValue.swift
+      - path: Sources/FerminCore
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.fermincode.desktop.core
@@ -72,8 +70,7 @@ targets:
     type: application
     platform: macOS
     sources:
-      - path: Sources/FerminMac/FerminMacApp.swift
-      - path: Sources/FerminMac/FerminCodeDesktop
+      - path: Sources/FerminMac
       - path: Resources/Fermin.icns
         buildPhase: resources
     dependencies:
@@ -92,6 +89,8 @@ targets:
         CFBundlePackageType: APPL
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        FerminCodePrimaryRelayURL: $(FERMIN_CODE_PRIMARY_RELAY_URL)
+        FerminCodeSecondaryRelayURL: $(FERMIN_CODE_SECONDARY_RELAY_URL)
         LSApplicationCategoryType: public.app-category.productivity
         LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
         NSHighResolutionCapable: true

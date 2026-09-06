@@ -15,43 +15,22 @@ let package = Package(
     targets: [
         .target(
             name: "FerminCore",
-            path: "Sources/FerminCore",
-            sources: [
-                "FerminCodeRelay",
-                "Persistence/TokenVault.swift",
-                "Protocol/JSONValue.swift",
-            ]
+            path: "Sources/FerminCore"
         ),
         .executableTarget(
             name: "FerminMac",
             dependencies: ["FerminCore"],
-            path: "Sources/FerminMac",
-            sources: [
-                "FerminMacApp.swift",
-                "FerminCodeDesktop",
-            ]
+            path: "Sources/FerminMac"
         ),
         .testTarget(
             name: "FerminCoreTests",
             dependencies: ["FerminCore"],
-            path: "Tests/FerminCoreTests",
-            sources: [
-                "FerminCodeRelayCommandTrackerTests.swift",
-                "FerminCodeRelayDecodingTests.swift",
-                "FerminCodeRelayHTTPTests.swift",
-                "FerminCodeRelayModelPolicyTests.swift",
-                "FerminCodeRelayRoutingTests.swift",
-                "FerminCodeRelaySSETests.swift",
-            ]
+            path: "Tests/FerminCoreTests"
         ),
         .testTarget(
             name: "FerminMacTests",
             dependencies: ["FerminMac"],
-            path: "Tests/FerminMacTests",
-            sources: [
-                "FerminCodeDesktopPolicyTests.swift",
-                "FerminCodeDesktopStoreTests.swift",
-            ]
+            path: "Tests/FerminMacTests"
         ),
     ],
     swiftLanguageVersions: [.v5]

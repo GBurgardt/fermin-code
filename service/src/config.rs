@@ -302,6 +302,25 @@ mod tests {
     use super::*;
 
     #[test]
+    fn shipped_examples_form_one_local_pair_with_separate_credentials() {
+        let engine: EngineConfig =
+            toml::from_str(include_str!("../config/engine.example.toml")).unwrap();
+        let relay: RelayConfig =
+            toml::from_str(include_str!("../config/relay.example.toml")).unwrap();
+        engine.validate().unwrap();
+        relay.validate().unwrap();
+        let bridge = engine.relay.as_ref().unwrap();
+        assert_eq!(bridge.url, format!("ws://{}/v1/engine/connect", relay.bind));
+        assert_eq!(bridge.token_file, relay.engine_token_file);
+        assert_ne!(engine.bind, relay.bind);
+        assert_ne!(engine.database_path, relay.database_path);
+        assert_eq!(engine.database_path.parent(), relay.database_path.parent());
+        assert_ne!(engine.auth_token_file, relay.auth_token_file);
+        assert_ne!(engine.auth_token_file, relay.engine_token_file);
+        assert_ne!(relay.auth_token_file, relay.engine_token_file);
+    }
+
+    #[test]
     fn rejects_non_loopback_bind() {
         assert!(validate_loopback("0.0.0.0:8840".parse().unwrap(), "bind").is_err());
     }

@@ -28,6 +28,98 @@ private final class SessionRefreshMockURLProtocol: URLProtocol {
 }
 
 final class KycodeSessionPinningPolicyTests: XCTestCase {
+    @MainActor
+    func testPinnedMutationStaysOptimisticUntilCompletionAndRollsBackTerminalFailures() async throws {
+        for terminalState in [KycodeDurableCommandState.completed, .failed, .unknown] {
+            let configuration = URLSessionConfiguration.ephemeral
+            configuration.protocolClasses = [SessionRefreshMockURLProtocol.self]
+            let session = URLSession(configuration: configuration)
+            let store = KycodeConnectionStore(urlSession: session, initialProfileIdOverride: "puky")
+            defer { store.disconnect() }
+            store.baseURLInput = "https://mock.kycode.test"
+            store.authTokenInput = "test-token"
+            var remotePinned = true
+            var puts = 0
+            SessionRefreshMockURLProtocol.handler = { request in
+                let url = try XCTUnwrap(request.url)
+                let response = try XCTUnwrap(HTTPURLResponse(
+                    url: url, statusCode: 200, httpVersion: nil,
+                    headerFields: ["Content-Type": "application/json"]
+                ))
+                if request.httpMethod == "PUT" {
+                    XCTAssertEqual(url.path, "/api/mobile/sessions/pin-window/pinned")
+                    let body = try XCTUnwrap(request.httpBody ?? request.httpBodyStream.map { stream in
+                        stream.open()
+                        defer { stream.close() }
+                        var bytes = [UInt8](repeating: 0, count: 4096)
+                        let count = stream.read(&bytes, maxLength: bytes.count)
+                        return Data(bytes.prefix(max(0, count)))
+                    })
+                    let payload = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+                    XCTAssertEqual(payload["pinned"] as? Bool, false)
+                    XCTAssertNotNil(UUID(uuidString: payload["idempotencyKey"] as? String ?? ""))
+                    puts += 1
+                    return (response, Data(#"{"ok":true,"windowId":"pin-window","commandId":"pin-command","commandState":"accepted","inserted":true,"durable":true,"queuedAt":1}"#.utf8))
+                }
+                let item: [String: Any] = [
+                    "windowId": "pin-window", "sessionId": "pin-window", "engine": "codex",
+                    "projectKey": "qa", "displayName": "Pin QA", "sidecarMode": "relay",
+                    "activityStatus": "ready", "messageCount": 0, "updatedAt": 1,
+                    "canSend": true, "isPinned": remotePinned
+                ]
+                let envelope: [String: Any] = url.path.hasSuffix("/pin-window")
+                    ? ["ok": true, "item": item]
+                    : ["ok": true, "items": [item]]
+                return (response, try JSONSerialization.data(withJSONObject: envelope))
+            }
+            await store.refreshSessionsNow()
+            XCTAssertEqual(store.sessions.first?.isPinned, true)
+            let accepted = await store.setSessionPinned(windowId: "pin-window", pinned: false)
+            XCTAssertTrue(accepted)
+            XCTAssertTrue(store.isPinningSession("pin-window"))
+            XCTAssertEqual(store.sessions.first?.isPinned, false)
+            let duplicate = await store.setSessionPinned(windowId: "pin-window", pinned: true)
+            XCTAssertFalse(duplicate)
+            XCTAssertEqual(puts, 1)
+            await store.refreshSessionsNow()
+            XCTAssertEqual(store.sessions.first?.isPinned, false, "An old snapshot cannot undo the pending pin.")
+            remotePinned = terminalState != .completed
+            store.applyDurableCommandStateChanged(KycodeCommandStateChangedEvent(
+                commandId: "pin-command", state: terminalState,
+                error: terminalState == .completed ? nil : "pin rejected"
+            ))
+            await store.refreshSessionsNow()
+            XCTAssertFalse(store.isPinningSession("pin-window"))
+            XCTAssertEqual(store.sessions.first?.isPinned, remotePinned)
+            if terminalState != .completed {
+                XCTAssertEqual(store.errorMessage, "No se pudo sincronizar el estado fijado de la sesión. pin rejected")
+            }
+            store.disconnect()
+        }
+    }
+
+    func testSharedPinsOverrideLegacyLocalPreferencesAndSurviveDetailReconciliation() throws {
+        var unpinned = try summary(windowId: "shared-unpinned", displayName: "Unpinned")
+        unpinned.isPinned = false
+        var pinned = try summary(windowId: "shared-pinned", displayName: "Pinned")
+        pinned.isPinned = true
+        XCTAssertEqual(KycodeSessionPinningPolicy.pinnedSessions(
+            in: [unpinned, pinned], unpinnedWindowIds: [pinned.windowId]
+        ).map(\.windowId), [pinned.windowId])
+        let encoded = try JSONEncoder().encode(unpinned)
+        let wire = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        XCTAssertEqual(wire["isPinned"] as? Bool, false, "Match the relay's real snapshot field.")
+        XCTAssertNil(wire["pinned"])
+        let decoded = try JSONDecoder().decode(KycodeSessionSummary.self, from: encoded)
+        XCTAssertEqual(decoded.isPinned, false)
+        var older = unpinned
+        older.isPinned = true
+        older.updatedAt -= 1
+        XCTAssertEqual(KycodeSessionDetailReconciliationPolicy.merging(
+            current: unpinned, incoming: older
+        ).isPinned, false)
+    }
+
     func testSessionsArePinnedByDefaultAndRoundTripUnpinnedStorage() throws {
         let first = try summary(windowId: "session-a", displayName: "A")
         let second = try summary(windowId: "session-b", displayName: "B")
@@ -608,6 +700,7 @@ final class SessionRefreshErrorPolicyTests: XCTestCase {
         )
         XCTAssertFalse(store.hasAuthoritativeDetail(for: "detail-state-window"))
         XCTAssertEqual(store.sessions.first?.messageCount, 1)
+        XCTAssertNil(store.errorMessage, "A background detail failure belongs to its session, not a global alert.")
 
         detailReturnsValidPayload = true
         await store.refreshDetail(windowId: "detail-state-window")

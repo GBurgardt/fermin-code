@@ -281,7 +281,7 @@ final class VoiceTranscriptionTests: XCTestCase {
         try Data([0, 1, 2, 3]).write(to: temporaryURL)
         defer { try? FileManager.default.removeItem(at: temporaryURL) }
 
-        let body = try MistralMultipartFormData.body(
+        let body = try AudioMultipartFormData.body(
             fields: MistralTranscriptionRequestPolicy.fields(
                 model: "voxtral-mini-latest",
                 language: "es",
@@ -297,6 +297,21 @@ final class VoiceTranscriptionTests: XCTestCase {
         XCTAssertTrue(rendered.contains("name=\"diarize\"\r\n\r\ntrue"))
         XCTAssertTrue(rendered.contains("filename=\"\(temporaryURL.lastPathComponent)\""))
         XCTAssertTrue(rendered.hasSuffix("--fixture-boundary--\r\n"))
+    }
+
+    func testSharedAudioUploadPreservesSupportedMimeTypes() {
+        let expected = [
+            "flac": "audio/flac", "mp3": "audio/mpeg", "mpga": "audio/mpeg",
+            "mp4": "video/mp4", "mpeg": "video/mpeg", "m4a": "audio/mp4",
+            "ogg": "audio/ogg", "wav": "audio/wav", "webm": "audio/webm",
+            "unknown": "application/octet-stream"
+        ]
+        for (extensionName, mimeType) in expected {
+            XCTAssertEqual(
+                AudioMultipartFormData.mimeType(for: URL(fileURLWithPath: "/fixture.\(extensionName.uppercased())")),
+                mimeType
+            )
+        }
     }
 
     private func makeWave(

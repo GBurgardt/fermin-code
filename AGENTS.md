@@ -8,9 +8,13 @@ Mantené explícita la frontera: Codex App Server razona y ejecuta; Fermín toma
 custodia de las órdenes y de su historia. Todos los clientes se conectan al
 relay, nunca directamente al engine.
 
-La arquitectura objetivo es una estrella N×M. El código `v0.1` admite una
-generación activa de engine por instancia de relay. No documentes routing
-multi-host en una sola instancia como si ya estuviera implementado.
+Cada relay admite una generación activa de engine. Los dos perfiles de los
+clientes apuntan a pares independientes. No hay routing multi-host en una
+instancia ni una arquitectura futura comprometida.
+
+Preferí eliminar código sin uso y compartir implementaciones repetidas antes
+de agregar abstracciones. Conservá contratos, datos y funciones activas. No
+retires persistencia, idempotencia, replay o fencing para reducir líneas.
 
 Escribí la documentación con una voz clara, precisa y natural. Empezá por la
 idea más fácil de entender y explicá un concepto por vez. Cuando aparezca un
@@ -21,7 +25,7 @@ Evitá slogans, entusiasmo promocional, metáforas forzadas y promesas.
 Usá presente indicativo para describir el sistema e imperativo para los pasos de
 instalación. Podés hablarle directamente al lector y usar una situación real
 cuando ayude a entender una operación. Separá siempre capacidad implementada,
-arquitectura objetivo y capacidad no incluida. No describas un beneficio sin
+propuesta y capacidad no incluida. No describas un beneficio sin
 indicar el mecanismo y las condiciones que lo hacen posible.
 
 La documentación pública es mobile-first. El README debe entenderse a 390 px

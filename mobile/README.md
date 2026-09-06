@@ -10,9 +10,8 @@ directamente con la Mac host ni con el engine.
 
 <sub>La imagen se puede abrir en resolución completa.</sub>
 
-El proyecto y scheme de Xcode conservan el nombre interno anterior `KyCode` y
-la app mantiene identificadores Fermín Code por compatibilidad. El nombre
-público del producto es Fermín.
+El proyecto y scheme de Xcode conservan el nombre interno anterior `KyCode`.
+Los bundle identifiers de esta edición pública no cambian con la presentación.
 
 ## Generar el proyecto
 

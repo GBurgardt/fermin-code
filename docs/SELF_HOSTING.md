@@ -2,197 +2,166 @@
 
 [← Documentación](README.md)
 
-Esta guía arma la instalación local más simple: relay, engine y Codex corren en
-la misma Mac.
+Esta guía empieza con relay, engine y Codex en la misma Mac. Primero comprobá
+el camino local; después agregá acceso desde otros dispositivos.
 
-No instala servicios de fondo, no crea un dominio público y no configura firma
-de Apple.
+Es una instalación experimental para una persona. No configura servicios al
+arrancar macOS, dominios, firma Apple ni actualizaciones automáticas.
 
-## Antes de empezar
+## 1. Revisar el acceso que vas a dar
 
-Necesitás una Mac con Rust 1.92 o posterior, Xcode Command Line Tools y un Codex
-CLI compatible ya autenticado. Xcode completo y XcodeGen sólo son necesarios
-si también vas a generar Mobile.
+Leé el [modelo de seguridad](SECURITY_MODEL.md) antes de generar credenciales.
+El engine usa `approvalPolicy=never`: no esperes una aprobación interactiva
+antes de cada acción. El sandbox efectivo depende de la configuración de Codex
+en el host. `workspaceRoots` limita rutas aceptadas por Fermín, no todos los
+efectos de las herramientas.
 
-Son ocho pasos. Primero hacemos funcionar todo dentro de la Mac. El acceso
-remoto queda para el final, así un problema de red no se confunde con un
-problema del servicio.
+Usá una cuenta y un entorno acordes al acceso que quieras conceder. No cambies
+el sandbox a acceso total para resolver a ciegas un problema de instalación.
+Esta guía no modifica la configuración de Codex.
 
-## Topología resultante
+## 2. Comprobar herramientas y compilar
 
-```text
-Mobile / Desktop
-       ↓
-Relay local
-       ↓
-Engine local
-       ↓
-Codex App Server
-```
+Necesitás macOS, Rust 1.92 o posterior, Xcode Command Line Tools y Codex CLI
+compatible y autenticado. Para Mobile necesitás además Xcode completo y
+XcodeGen.
 
-Al terminar, vas a poder mandar una orden al relay local. El relay la guarda y
-el engine de esa misma Mac se la entrega a Codex.
-
-En `v0.1`, cada relay trabaja con una generación activa de engine. Para usar dos
-Macs hoy, levantá un par relay–engine por Mac y configurá ambos endpoints como
-Primary y Secondary. La central única que elige entre varios hosts todavía es
-parte del diseño futuro.
-
-## 1. Comprobar la Mac host
-
-Primero comprobá que Codex funciona en la Mac donde va a correr el engine.
+Desde la raíz del repositorio:
 
 ```bash
 command -v codex
 codex --version
+(cd service && cargo build --locked --release)
+service/target/release/ferminctl doctor \
+  --codex "$(command -v codex)"
 ```
 
-Compilá el servicio y comprobá su conexión local con Codex:
+`doctor` comprueba compatibilidad con App Server. No demuestra que tu cuenta,
+permisos y herramientas puedan completar cualquier tarea. Si falla, resolvé
+esa incompatibilidad antes de añadir el relay.
+
+## 3. Preparar dos archivos y tres tokens
+
+Desde la raíz del repositorio, este bloque crea un directorio nuevo y privado.
+Se detiene si ya existe; no lo borres ni sobrescribas para repetir el paso.
 
 ```bash
-(cd service && cargo build --release)
-(cd service && cargo run --bin ferminctl -- doctor --codex "$(command -v codex)")
+(
+  set -eu
+  umask 077
+  fermin_config_dir="$HOME/Library/Application Support/FerminCode"
+  mkdir "$fermin_config_dir"
+  mkdir "$fermin_config_dir/secrets" "$fermin_config_dir/state"
+  for token_name in client-token engine-token local-api-token; do
+    openssl rand -hex -out "$fermin_config_dir/secrets/$token_name" 32
+  done
+  cp service/config/relay.example.toml "$fermin_config_dir/relay.toml"
+  cp service/config/engine.example.toml "$fermin_config_dir/engine.toml"
+)
 ```
 
-No sigas hasta que `ferminctl doctor` termine correctamente. Es más fácil
-resolver primero la conexión local con Codex y agregar el relay después.
+Los tokens quedan en archivos privados y no se imprimen. Si el bloque falla,
+revisá lo que alcanzó a crear; no inicia procesos ni modifica Codex.
 
-## 2. Crear tres tokens
+Abrí los dos TOML con un editor:
 
-Creá un token distinto para cada frontera:
+- Reemplazá `/Users/USERNAME` por la ruta absoluta de tu usuario.
+- En `engine.toml`, poné el resultado de `command -v codex` en `codexPath`.
+- Reemplazá `workspaceRoots` por el proyecto o los proyectos que vas a usar.
+- Mantené configuración, tokens y estado fuera de esos workspaces.
 
-- clientes → relay;
-- engine → relay; y
-- API local del engine.
+TOML no expande `$HOME` ni `~`. Los archivos de ejemplo ya conectan relay y
+engine por loopback, comparten la ruta del token de engine y separan las bases.
+No pegues el contenido de un token en TOML: los campos contienen rutas.
 
-Este comando crea archivos privados desde el inicio:
+Los puertos son 8840 y 8841. Si los cambiás, actualizá también `relay.url`
+en el engine. Los límites de tamaño, heartbeat y reconexión usan los valores
+predeterminados de [config.rs](../service/src/config.rs); no hace falta copiar
+todos esos ajustes para empezar.
 
-```bash
-umask 077
-mkdir -p "$HOME/Library/Application Support/FerminCode/secrets"
-openssl rand -hex 32 > "$HOME/Library/Application Support/FerminCode/secrets/client-token"
-openssl rand -hex 32 > "$HOME/Library/Application Support/FerminCode/secrets/engine-token"
-openssl rand -hex 32 > "$HOME/Library/Application Support/FerminCode/secrets/local-api-token"
-chmod 600 "$HOME/Library/Application Support/FerminCode/secrets/"*-token
-```
+## 4. Iniciar relay y engine
 
-Los archivos de configuración guardan rutas a tokens, no sus valores. No pegues
-un token en TOML, logs, historial del shell ni Git.
-
-## 3. Iniciar el relay
-
-Prepará `service/config/relay.toml`:
-
-1. Copiá `service/config/relay.example.toml` al nombre anterior.
-2. Reemplazá `USERNAME`.
-3. Apuntá los tokens de cliente y engine a los archivos del paso 2.
-
-Después iniciá el proceso:
+Desde la raíz del repositorio, en una terminal:
 
 ```bash
 service/target/release/fermin-relay \
-  --config service/config/relay.toml
+  --config "$HOME/Library/Application Support/FerminCode/relay.toml"
 ```
 
-El relay escucha solamente dentro de la Mac, en el puerto 8840. Comprobalo:
+En otra:
+
+```bash
+service/target/release/fermin-engine \
+  --config "$HOME/Library/Application Support/FerminCode/engine.toml"
+```
+
+Comprobá el relay, usando tu puerto si lo cambiaste:
 
 ```bash
 curl --fail http://127.0.0.1:8840/healthz
 ```
 
-## 4. Iniciar el engine
-
-Prepará `service/config/engine.toml` a partir de
-`service/config/engine.example.toml`. Configurá:
-
-- `codexPath` con la ruta absoluta devuelta por `command -v codex`;
-- `workspaceRoots` sólo con directorios que Codex remoto pueda usar;
-- `authTokenFile` con el token de la API local;
-- `relay.tokenFile` con el token del engine; y
-- `relay.url` como `ws://127.0.0.1:8840/v1/engine/connect` para este montaje
-  en la misma Mac.
-
-Iniciá el engine:
-
-```bash
-service/target/release/fermin-engine \
-  --config service/config/engine.toml
-```
-
-Consultá `/healthz` otra vez. Debe mostrar un engine conectado y listo.
+Relay disponible y engine listo son estados diferentes. Esperá a que el health
+muestre el engine conectado y listo antes de probar una tarea. Si cerrás estas
+terminales, no hay un supervisor instalado por esta guía que las reemplace.
 
 ## 5. Conectar Desktop
-
-Ejecutá el cliente contra el relay local:
 
 ```bash
 cd desktop
 FERMIN_CODE_PRIMARY_RELAY_URL=http://127.0.0.1:8840 swift run FerminCode
 ```
 
-Abrí Ajustes y guardá el token de cliente. Para una build de Xcode, configurá
-`FERMIN_CODE_PRIMARY_RELAY_URL` en `desktop/project.yml` o en los build
-settings del target generado.
+En Ajustes, guardá el token de cliente generado en
+`$HOME/Library/Application Support/FerminCode/secrets/client-token`.
+Usá un editor o un método privado para introducirlo en la app; no
+lo pegues en comandos, URLs, logs o issues. Desktop lo almacena en Keychain.
 
-## 6. Conectar Mobile
+El token `engine-token` es sólo para engine → relay. `local-api-token` protege
+la API local del engine. No los intercambies con el token de cliente.
 
-Definí tus valores en `mobile/project.yml`:
+Para generar la app con Xcode, seguí [Desktop](../desktop/README.md).
 
-- `FERMIN_CODE_PRIMARY_RELAY_URL`;
-- `FERMIN_CODE_SECONDARY_RELAY_URL` si tenés un segundo par relay–engine; y
-- `FERMIN_CODE_APP_GROUP` si usás la extensión de compartir.
+## 6. Preparar acceso remoto y Mobile
 
-Generá el proyecto:
+El relay sigue escuchando en loopback. Para llegar desde otro dispositivo,
+configurá un proxy o túnel autenticado con TLS. Una VPN sola no convierte un
+listener ligado a `127.0.0.1` en un servicio alcanzable desde otra máquina:
+necesitás también publicar ese acceso de forma controlada.
 
-```bash
-cd mobile
-xcodegen generate
-open KyCode.xcodeproj
-```
+La capa de acceso debe conservar streaming SSE y los upgrades WebSocket de
+`/v1/engine/connect`. No expongas el engine ni App Server. Usá HTTPS para los
+clientes y WSS si engine y relay están en máquinas distintas.
 
-Elegí tu equipo de desarrollo y bundle identifiers en Xcode. El chat principal
-usa la sesión de Codex de la Mac del engine; no necesita una clave del proveedor
-de modelos dentro de iOS. `Secrets.example.plist` documenta sólo ajustes
-opcionales de voz y compartir.
+Mobile se configura con tu endpoint y token de cliente. Seguí
+[Mobile](../mobile/README.md) para XcodeGen, bundle identifiers y firma. En el
+iPhone, `127.0.0.1` apunta al propio teléfono, no a la Mac.
 
-## 7. Acceder remotamente
+El chat usa la autenticación de Codex en el host. Las funciones opcionales de
+voz requieren su propia configuración. No distribuyas una app con credenciales
+de proveedores incrustadas. El repositorio tampoco publica ni instala apps
+por OTA para otros usuarios.
 
-Mantené el relay ligado a `127.0.0.1`. Colocá delante una de estas opciones:
+## Si querés otra topología
 
-- un túnel TLS saliente;
-- una red privada WireGuard o Tailscale; o
-- un reverse proxy configurado y protegido por vos.
+Podés colocar el relay en otra máquina disponible para recibir pedidos mientras
+el host está desconectado. Cambiá las rutas locales de almacenamiento y la
+conexión del engine al relay. Esta guía no automatiza ese despliegue.
 
-La capa de acceso debe preservar streaming SSE y upgrades WebSocket para
-`/v1/engine/connect`. Usá tu propio dominio, separá los tokens de cliente y
-engine, y probá HTTPS y WSS.
+Para dos hosts, la versión actual usa dos pares relay–engine y los perfiles
+Primary y Secondary. No hay un relay que distribuya trabajo entre varios hosts.
 
-No expongas el relay directamente en `0.0.0.0` como atajo. Este repositorio no
-configura el acceso público por vos.
+## Qué verificar antes de confiarle trabajo
 
-## 8. Entender qué ocurre si la Mac se apaga
+- El health distingue relay disponible y engine listo.
+- Desktop puede crear una sesión en el proyecto elegido.
+- Un pedido de prueba produce eventos y un resultado que podés comprobar.
+- Cerrar y abrir el cliente recupera la conversación.
+- El acceso remoto funciona también fuera de la red local.
 
-Si relay y engine viven en la misma Mac, al apagarla caen los dos. Durante ese
-tiempo, la central no puede recibir ni guardar órdenes nuevas.
+Una confirmación de recepción no demuestra que se terminó una tarea. Revisá
+los [estados de la API](API.md), la política de órdenes demoradas y cómo vas a
+proteger o respaldar los datos. Las pruebas de CI no sustituyen esta comprobación
+en tu propia instalación.
 
-Si querés recibir órdenes mientras la Mac de trabajo está desconectada, el
-relay tiene que vivir en otra máquina disponible. El host podrá volver después
-y continuar el trabajo. Esta guía no automatiza ese despliegue y `v0.1` sigue
-admitiendo un engine por instancia.
-
-## Comprobación final
-
-Antes de llamar terminada a la instalación, verificá estas cuatro cosas:
-
-- `/healthz` muestra relay y engine listos;
-- Desktop puede crear o abrir una sesión;
-- una orden aparece en Codex y devuelve eventos; y
-- cerrar y volver a abrir el cliente recupera la historia.
-
-Si estas cuatro pruebas pasan, el camino local está listo. El túnel o proxy se
-prueba aparte porque sólo agrega el acceso remoto.
-
----
-
-[← Arquitectura](ARCHITECTURE.md) · [Documentación](README.md) ·
-[Siguiente: API →](API.md)
+[← Arquitectura](ARCHITECTURE.md) · [Documentación](README.md) · [API →](API.md)

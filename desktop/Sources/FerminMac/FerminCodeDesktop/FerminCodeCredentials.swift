@@ -58,7 +58,8 @@ struct FerminCodeCredentialSnapshot: Sendable, Equatable {
 }
 
 actor FerminCodeCredentialStore {
-    static let keychainService = "dev.fermincode.desktop.relay.v1"
+    // A separately identified build must not read or replace another app's token.
+    static let keychainService = "\(Bundle.main.bundleIdentifier ?? "dev.fermincode.desktop").relay.v1"
 
     private let vaults: [FerminCodeRelaySource: any FerminCodeCredentialVault]
     private let bootstrapDirectory: URL

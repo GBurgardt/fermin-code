@@ -205,6 +205,7 @@ enum KycodeTrackedCommandOperation: String, Sendable {
     case sendMessage
     case retryPromptTransform
     case minimize
+    case setPinned
     case rename
     case archive
     case setFeatures
@@ -219,6 +220,7 @@ enum KycodeTrackedCommandOperation: String, Sendable {
         case .sendMessage: return "enviar el mensaje"
         case .retryPromptTransform: return "reintentar la mejora del prompt"
         case .minimize: return "cambiar la visibilidad de la sesión"
+        case .setPinned: return "sincronizar el estado fijado de la sesión"
         case .rename: return "renombrar la sesión"
         case .archive: return "archivar la sesión"
         case .setFeatures: return "actualizar las funciones de la sesión"
@@ -563,42 +565,43 @@ struct KycodePendingSubagentDraft: Codable, Hashable, Sendable {
 }
 
 struct KycodeSessionSummary: Codable, Identifiable, Hashable, Sendable {
-    let windowId: String
+    var windowId: String
     let sessionId: String
     let engine: String?
-    let model: String?
-    let reasoningEffort: String?
+    var model: String?
+    var reasoningEffort: String?
     let providerSessionId: String?
-    let providerSessionPath: String?
+    var providerSessionPath: String?
     let projectKey: String
     let projectPath: String?
     let projectName: String?
-    let windowName: String?
-    let displayName: String
+    var windowName: String?
+    var displayName: String
     let sidecarMode: String
-    let sidecarUrl: String?
+    var sidecarUrl: String?
     let activityStatus: String
     let runtimeStatus: String?
     let runtimeStatusDetail: String?
-    let features: KycodeSessionFeatures?
+    var features: KycodeSessionFeatures?
     var runMode: String? = nil
     var goalStartedAt: Double? = nil
     let messageCount: Int
-    let updatedAt: Double
+    var updatedAt: Double
     let createdAt: Double?
-    let rawPrompt: String?
-    let originalPrompt: String?
-    let improvedPrompt: String?
+    var rawPrompt: String?
+    var originalPrompt: String?
+    var improvedPrompt: String?
     let lastMessagePreview: String?
-    let isMinimized: Bool?
+    var isMinimized: Bool?
     let canSend: Bool
     let canControlFeatures: Bool?
     let unsupportedReason: String?
-    let messages: [KycodeMessage]?
+    var messages: [KycodeMessage]?
     var pendingSubagent: KycodePendingSubagentDraft? = nil
     var collaborationProjectId: String? = nil
     var collaborationProjectName: String? = nil
     var sessionName: String? = nil
+    var isPinned: Bool? = nil
 
     var id: String { windowId }
     var minimized: Bool { isMinimized == true }
@@ -746,334 +749,69 @@ enum KycodeCachedSessionIdentityPolicy {
 
 private extension KycodeSessionSummary {
     func replacingWindowId(_ nextWindowId: String) -> KycodeSessionSummary {
-        KycodeSessionSummary(
-            windowId: nextWindowId,
-            sessionId: sessionId,
-            engine: engine,
-            model: model,
-            reasoningEffort: reasoningEffort,
-            providerSessionId: providerSessionId,
-            providerSessionPath: providerSessionPath,
-            projectKey: projectKey,
-            projectPath: projectPath,
-            projectName: projectName,
-            windowName: windowName,
-            displayName: displayName,
-            sidecarMode: sidecarMode,
-            sidecarUrl: sidecarUrl,
-            activityStatus: activityStatus,
-            runtimeStatus: runtimeStatus,
-            runtimeStatusDetail: runtimeStatusDetail,
-            features: features,
-            runMode: runMode,
-            goalStartedAt: goalStartedAt,
-            messageCount: messageCount,
-            updatedAt: updatedAt,
-            createdAt: createdAt,
-            rawPrompt: rawPrompt,
-            originalPrompt: originalPrompt,
-            improvedPrompt: improvedPrompt,
-            lastMessagePreview: lastMessagePreview,
-            isMinimized: isMinimized,
-            canSend: canSend,
-            canControlFeatures: canControlFeatures,
-            unsupportedReason: unsupportedReason,
-            messages: messages,
-            pendingSubagent: pendingSubagent,
-            collaborationProjectId: collaborationProjectId,
-            collaborationProjectName: collaborationProjectName,
-            sessionName: sessionName
-        )
+        var copy = self
+        copy.windowId = nextWindowId
+        return copy
     }
 
     var lightweightCachedCopy: KycodeSessionSummary {
-        KycodeSessionSummary(
-            windowId: windowId,
-            sessionId: sessionId,
-            engine: engine,
-            model: model,
-            reasoningEffort: reasoningEffort,
-            providerSessionId: providerSessionId,
-            providerSessionPath: nil,
-            projectKey: projectKey,
-            projectPath: projectPath,
-            projectName: projectName,
-            windowName: windowName,
-            displayName: displayName,
-            sidecarMode: sidecarMode,
-            sidecarUrl: nil,
-            activityStatus: activityStatus,
-            runtimeStatus: runtimeStatus,
-            runtimeStatusDetail: runtimeStatusDetail,
-            features: features,
-            runMode: runMode,
-            goalStartedAt: goalStartedAt,
-            messageCount: messageCount,
-            updatedAt: updatedAt,
-            createdAt: createdAt,
-            rawPrompt: nil,
-            originalPrompt: nil,
-            improvedPrompt: nil,
-            lastMessagePreview: lastMessagePreview,
-            isMinimized: isMinimized,
-            canSend: canSend,
-            canControlFeatures: canControlFeatures,
-            unsupportedReason: unsupportedReason,
-            messages: nil,
-            pendingSubagent: pendingSubagent,
-            collaborationProjectId: collaborationProjectId,
-            collaborationProjectName: collaborationProjectName,
-            sessionName: sessionName
-        )
+        var copy = self
+        copy.providerSessionPath = nil
+        copy.sidecarUrl = nil
+        copy.rawPrompt = nil
+        copy.originalPrompt = nil
+        copy.improvedPrompt = nil
+        copy.messages = nil
+        return copy
     }
 
     func replacingWindowName(_ name: String, updatedAt nextUpdatedAt: Double? = nil) -> KycodeSessionSummary {
-        KycodeSessionSummary(
-            windowId: windowId,
-            sessionId: sessionId,
-            engine: engine,
-            model: model,
-            reasoningEffort: reasoningEffort,
-            providerSessionId: providerSessionId,
-            providerSessionPath: providerSessionPath,
-            projectKey: projectKey,
-            projectPath: projectPath,
-            projectName: projectName,
-            windowName: name,
-            displayName: name,
-            sidecarMode: sidecarMode,
-            sidecarUrl: sidecarUrl,
-            activityStatus: activityStatus,
-            runtimeStatus: runtimeStatus,
-            runtimeStatusDetail: runtimeStatusDetail,
-            features: features,
-            runMode: runMode,
-            goalStartedAt: goalStartedAt,
-            messageCount: messageCount,
-            updatedAt: nextUpdatedAt ?? updatedAt,
-            createdAt: createdAt,
-            rawPrompt: rawPrompt,
-            originalPrompt: originalPrompt,
-            improvedPrompt: improvedPrompt,
-            lastMessagePreview: lastMessagePreview,
-            isMinimized: isMinimized,
-            canSend: canSend,
-            canControlFeatures: canControlFeatures,
-            unsupportedReason: unsupportedReason,
-            messages: messages,
-            pendingSubagent: pendingSubagent,
-            collaborationProjectId: collaborationProjectId,
-            collaborationProjectName: collaborationProjectName,
-            sessionName: name
-        )
+        var copy = self
+        copy.windowName = name
+        copy.displayName = name
+        copy.sessionName = name
+        copy.updatedAt = nextUpdatedAt ?? updatedAt
+        return copy
     }
 
     func replacingCollaborationProject(_ project: KycodeCollaborationProject) -> KycodeSessionSummary {
-        KycodeSessionSummary(
-            windowId: windowId,
-            sessionId: sessionId,
-            engine: engine,
-            model: model,
-            reasoningEffort: reasoningEffort,
-            providerSessionId: providerSessionId,
-            providerSessionPath: providerSessionPath,
-            projectKey: projectKey,
-            projectPath: projectPath,
-            projectName: projectName,
-            windowName: collaborationSessionName,
-            displayName: collaborationSessionName,
-            sidecarMode: sidecarMode,
-            sidecarUrl: sidecarUrl,
-            activityStatus: activityStatus,
-            runtimeStatus: runtimeStatus,
-            runtimeStatusDetail: runtimeStatusDetail,
-            features: features,
-            runMode: runMode,
-            goalStartedAt: goalStartedAt,
-            messageCount: messageCount,
-            updatedAt: updatedAt,
-            createdAt: createdAt,
-            rawPrompt: rawPrompt,
-            originalPrompt: originalPrompt,
-            improvedPrompt: improvedPrompt,
-            lastMessagePreview: lastMessagePreview,
-            isMinimized: isMinimized,
-            canSend: canSend,
-            canControlFeatures: canControlFeatures,
-            unsupportedReason: unsupportedReason,
-            messages: messages,
-            pendingSubagent: pendingSubagent,
-            collaborationProjectId: project.id,
-            collaborationProjectName: project.name,
-            sessionName: collaborationSessionName
-        )
+        var copy = self
+        copy.windowName = collaborationSessionName
+        copy.displayName = collaborationSessionName
+        copy.sessionName = collaborationSessionName
+        copy.collaborationProjectId = project.id
+        copy.collaborationProjectName = project.name
+        return copy
     }
 
     func replacingMinimized(_ minimized: Bool, updatedAt nextUpdatedAt: Double? = nil) -> KycodeSessionSummary {
-        KycodeSessionSummary(
-            windowId: windowId,
-            sessionId: sessionId,
-            engine: engine,
-            model: model,
-            reasoningEffort: reasoningEffort,
-            providerSessionId: providerSessionId,
-            providerSessionPath: providerSessionPath,
-            projectKey: projectKey,
-            projectPath: projectPath,
-            projectName: projectName,
-            windowName: windowName,
-            displayName: displayName,
-            sidecarMode: sidecarMode,
-            sidecarUrl: sidecarUrl,
-            activityStatus: activityStatus,
-            runtimeStatus: runtimeStatus,
-            runtimeStatusDetail: runtimeStatusDetail,
-            features: features,
-            runMode: runMode,
-            goalStartedAt: goalStartedAt,
-            messageCount: messageCount,
-            updatedAt: nextUpdatedAt ?? updatedAt,
-            createdAt: createdAt,
-            rawPrompt: rawPrompt,
-            originalPrompt: originalPrompt,
-            improvedPrompt: improvedPrompt,
-            lastMessagePreview: lastMessagePreview,
-            isMinimized: minimized,
-            canSend: canSend,
-            canControlFeatures: canControlFeatures,
-            unsupportedReason: unsupportedReason,
-            messages: messages,
-            pendingSubagent: pendingSubagent,
-            collaborationProjectId: collaborationProjectId,
-            collaborationProjectName: collaborationProjectName,
-            sessionName: sessionName
-        )
+        var copy = self
+        copy.isMinimized = minimized
+        copy.updatedAt = nextUpdatedAt ?? updatedAt
+        return copy
     }
 
     func replacingRunMode(_ runMode: String, goalStartedAt: Double?) -> KycodeSessionSummary {
-        KycodeSessionSummary(
-            windowId: windowId,
-            sessionId: sessionId,
-            engine: engine,
-            model: model,
-            reasoningEffort: reasoningEffort,
-            providerSessionId: providerSessionId,
-            providerSessionPath: providerSessionPath,
-            projectKey: projectKey,
-            projectPath: projectPath,
-            projectName: projectName,
-            windowName: windowName,
-            displayName: displayName,
-            sidecarMode: sidecarMode,
-            sidecarUrl: sidecarUrl,
-            activityStatus: activityStatus,
-            runtimeStatus: runtimeStatus,
-            runtimeStatusDetail: runtimeStatusDetail,
-            features: features,
-            runMode: runMode,
-            goalStartedAt: goalStartedAt,
-            messageCount: messageCount,
-            updatedAt: updatedAt,
-            createdAt: createdAt,
-            rawPrompt: rawPrompt,
-            originalPrompt: originalPrompt,
-            improvedPrompt: improvedPrompt,
-            lastMessagePreview: lastMessagePreview,
-            isMinimized: isMinimized,
-            canSend: canSend,
-            canControlFeatures: canControlFeatures,
-            unsupportedReason: unsupportedReason,
-            messages: messages,
-            pendingSubagent: pendingSubagent,
-            collaborationProjectId: collaborationProjectId,
-            collaborationProjectName: collaborationProjectName,
-            sessionName: sessionName
-        )
+        var copy = self
+        copy.runMode = runMode
+        copy.goalStartedAt = goalStartedAt
+        return copy
     }
 
     func replacingFeatures(_ features: KycodeSessionFeatures?) -> KycodeSessionSummary {
-        KycodeSessionSummary(
-            windowId: windowId,
-            sessionId: sessionId,
-            engine: engine,
-            model: model,
-            reasoningEffort: reasoningEffort,
-            providerSessionId: providerSessionId,
-            providerSessionPath: providerSessionPath,
-            projectKey: projectKey,
-            projectPath: projectPath,
-            projectName: projectName,
-            windowName: windowName,
-            displayName: displayName,
-            sidecarMode: sidecarMode,
-            sidecarUrl: sidecarUrl,
-            activityStatus: activityStatus,
-            runtimeStatus: runtimeStatus,
-            runtimeStatusDetail: runtimeStatusDetail,
-            features: features,
-            runMode: runMode,
-            goalStartedAt: goalStartedAt,
-            messageCount: messageCount,
-            updatedAt: updatedAt,
-            createdAt: createdAt,
-            rawPrompt: rawPrompt,
-            originalPrompt: originalPrompt,
-            improvedPrompt: improvedPrompt,
-            lastMessagePreview: lastMessagePreview,
-            isMinimized: isMinimized,
-            canSend: canSend,
-            canControlFeatures: canControlFeatures,
-            unsupportedReason: unsupportedReason,
-            messages: messages,
-            pendingSubagent: pendingSubagent,
-            collaborationProjectId: collaborationProjectId,
-            collaborationProjectName: collaborationProjectName,
-            sessionName: sessionName
-        )
+        var copy = self
+        copy.features = features
+        return copy
     }
 
     func replacingRuntimeSettings(
         model: String,
         reasoningEffort: String
     ) -> KycodeSessionSummary {
-        KycodeSessionSummary(
-            windowId: windowId,
-            sessionId: sessionId,
-            engine: engine,
-            model: model,
-            reasoningEffort: reasoningEffort,
-            providerSessionId: providerSessionId,
-            providerSessionPath: providerSessionPath,
-            projectKey: projectKey,
-            projectPath: projectPath,
-            projectName: projectName,
-            windowName: windowName,
-            displayName: displayName,
-            sidecarMode: sidecarMode,
-            sidecarUrl: sidecarUrl,
-            activityStatus: activityStatus,
-            runtimeStatus: runtimeStatus,
-            runtimeStatusDetail: runtimeStatusDetail,
-            features: features,
-            runMode: runMode,
-            goalStartedAt: goalStartedAt,
-            messageCount: messageCount,
-            updatedAt: updatedAt,
-            createdAt: createdAt,
-            rawPrompt: rawPrompt,
-            originalPrompt: originalPrompt,
-            improvedPrompt: improvedPrompt,
-            lastMessagePreview: lastMessagePreview,
-            isMinimized: isMinimized,
-            canSend: canSend,
-            canControlFeatures: canControlFeatures,
-            unsupportedReason: unsupportedReason,
-            messages: messages,
-            pendingSubagent: pendingSubagent,
-            collaborationProjectId: collaborationProjectId,
-            collaborationProjectName: collaborationProjectName,
-            sessionName: sessionName
-        )
+        var copy = self
+        copy.model = model
+        copy.reasoningEffort = reasoningEffort
+        return copy
     }
 }
 
@@ -1493,7 +1231,7 @@ private struct KycodeCollaborationProjectAssignmentEnvelope: Codable, Sendable {
     let unchanged: Bool?
 }
 
-private struct KycodeDeleteEnvelope: Codable, Sendable {
+private struct KycodeWindowCommandEnvelope: Codable, Sendable {
     let ok: Bool
     let commandId: String
     let commandState: KycodeDurableCommandState?
@@ -1503,17 +1241,15 @@ private struct KycodeDeleteEnvelope: Codable, Sendable {
     let windowId: String
 }
 
-private struct KycodeCommandStatusEnvelope: Codable, Sendable {
-    let ok: Bool
-    let commandId: String
-    let commandState: String
-    let updatedAt: Double
-    let error: String?
-}
-
 private struct KycodePendingMinimizedUpdate: Sendable {
     let minimized: Bool
     let expiresAt: Date
+}
+
+private struct KycodePendingPinnedUpdate {
+    let id: UUID
+    let pinned: Bool
+    let previous: Bool?
 }
 
 private struct KycodePendingRenameUpdate: Sendable {
@@ -2539,6 +2275,7 @@ final class KycodeConnectionStore: ObservableObject {
     @Published private(set) var latestVoiceIsolationReport: VoiceIsolationReport? = nil
     @Published var errorMessage: String?
     @Published private(set) var lastBackgroundSyncErrorMessage: String?
+    @Published private var pendingPinnedUpdates: [String: KycodePendingPinnedUpdate] = [:]
 
     private var streamTask: Task<Void, Never>?
     private var refreshTask: Task<Void, Never>?
@@ -3748,10 +3485,12 @@ final class KycodeConnectionStore: ObservableObject {
         isStreaming = false
         isConnecting = false
         clearConnectionIssueState(cancelReconnectTask: false)
+        errorMessage = nil
         sessions = []
         sessionDetails = [:]
         detailLoadStates = [:]
         pendingDeletions = [:]
+        pendingPinnedUpdates = [:]
         pendingGoalModeUpdates = [:]
         pendingFeatureUpdates = [:]
         pendingOptimisticMessages = [:]
@@ -3947,7 +3686,7 @@ final class KycodeConnectionStore: ObservableObject {
             if await handleRecoverableConnectionFailure(error, source: "detail", credentials: credentials) {
                 return
             }
-            errorMessage = error.localizedDescription
+            recordBackgroundSyncFailure(error.localizedDescription, source: "detail")
         }
     }
 
@@ -5075,15 +4814,6 @@ final class KycodeConnectionStore: ObservableObject {
         }
     }
 
-    private func applyVoiceTranscriptionDelta(jobId: String, delta: String) {
-        guard !delta.isEmpty,
-              let job = voiceTranscriptionJobs[jobId],
-              ownsVoiceTranscription(job) else { return }
-        let updated = job.applying(delta: delta)
-        voiceTranscriptionJobs[jobId] = updated
-        updateOptimisticVoiceMessage(updated)
-    }
-
     @discardableResult
     func completeVoiceTranscription(jobId: String, transcript: String) async -> Bool {
         guard let attemptId = voiceTranscriptionJobs[jobId]?.attemptId else { return false }
@@ -5592,6 +5322,65 @@ final class KycodeConnectionStore: ObservableObject {
                 return .failure("No se pudo enviar. Revisá la conexión y reintentá.")
             }
             return .failure(presentableError)
+        }
+    }
+
+    func isPinningSession(_ windowId: String) -> Bool {
+        pendingPinnedUpdates[windowId] != nil
+    }
+
+    @discardableResult
+    func setSessionPinned(windowId: String, pinned: Bool) async -> Bool {
+#if DEBUG
+        if ProcessInfo.processInfo.environment["KYCODE_UI_TEST_DASHBOARD_FIXTURE"] == "1" {
+            applyPinnedState(pinned, windowId: windowId)
+            return true
+        }
+#endif
+        guard pendingPinnedUpdates[windowId] == nil,
+              let session = sessions.first(where: { $0.windowId == windowId }),
+              let target = routedTarget(for: windowId) else { return false }
+        let mutation = KycodePendingPinnedUpdate(id: UUID(), pinned: pinned, previous: session.isPinned)
+        pendingPinnedUpdates[windowId] = mutation
+        applyPinnedState(pinned, windowId: windowId)
+        do {
+            let request = try makeRequest(
+                credentials: target.credentials,
+                path: "/api/mobile/sessions/\(kycodeEncodedPathComponent(target.remoteWindowId))/pinned",
+                method: "PUT",
+                body: try JSONSerialization.data(withJSONObject: [
+                    "pinned": pinned, "idempotencyKey": mutation.id.uuidString
+                ]),
+                timeout: Self.sendRequestTimeout
+            )
+            requestObserver?(request)
+            let ack = try await perform(request, decode: KycodeWindowCommandEnvelope.self)
+            guard pendingPinnedUpdates[windowId]?.id == mutation.id else { return false }
+            try registerDurableCommandAcknowledgement(
+                ok: ack.ok, commandId: ack.commandId, commandState: ack.commandState,
+                inserted: ack.inserted, durable: ack.durable, queuedAt: ack.queuedAt,
+                context: KycodeTrackedCommandContext(
+                    operation: .setPinned, windowId: windowId, messageId: nil,
+                    sessionId: session.sessionId, mutationId: mutation.id
+                ),
+                requiresDurableContract: true
+            )
+            return true
+        } catch {
+            guard pendingPinnedUpdates[windowId]?.id == mutation.id else { return false }
+            pendingPinnedUpdates.removeValue(forKey: windowId)
+            applyPinnedState(mutation.previous, windowId: windowId)
+            errorMessage = "No se pudo sincronizar el estado fijado de la sesión. \(describe(error))"
+            return false
+        }
+    }
+
+    private func applyPinnedState(_ pinned: Bool?, windowId: String) {
+        if let index = sessions.firstIndex(where: { $0.windowId == windowId }) {
+            sessions[index].isPinned = pinned
+        }
+        if sessionDetails[windowId] != nil {
+            sessionDetails[windowId]?.isPinned = pinned
         }
     }
 
@@ -6613,17 +6402,6 @@ final class KycodeConnectionStore: ObservableObject {
         return migrated
     }
 
-    private static func defaultSelectedProfileId(for legacyBaseURL: String) -> String {
-        let normalized = normalizedRelayURL(legacyBaseURL)
-        if normalized == normalizedRelayURL(Self.pukyRemoteBaseURL) {
-            return Self.pukyProfileId
-        }
-        if normalized == normalizedRelayURL(Self.remoteHubBaseURL) {
-            return Self.personalProfileId
-        }
-        return Self.personalProfileId
-    }
-
     private static func normalizedRelayURL(_ value: String) -> String {
         value
             .trimmingCharacters(in: .whitespacesAndNewlines)
@@ -6988,6 +6766,10 @@ final class KycodeConnectionStore: ObservableObject {
             return
 
         case let .completed(context):
+            if let context, context.operation == .setPinned, let windowId = context.windowId,
+               pendingPinnedUpdates[windowId]?.id == context.mutationId {
+                pendingPinnedUpdates.removeValue(forKey: windowId)
+            }
             if let context, context.operation == .archive, let windowId = context.windowId {
                 finalizeDeletedSessionLocalArtifacts(
                     windowId: windowId,
@@ -7048,6 +6830,11 @@ final class KycodeConnectionStore: ObservableObject {
             }
         case .minimize:
             pendingMinimizedUpdates.removeValue(forKey: windowId)
+        case .setPinned:
+            if let pending = pendingPinnedUpdates[windowId], pending.id == context.mutationId {
+                pendingPinnedUpdates.removeValue(forKey: windowId)
+                applyPinnedState(pending.previous, windowId: windowId)
+            }
         case .rename:
             pendingRenameUpdates.removeValue(forKey: windowId)
         case .archive:
@@ -8646,6 +8433,10 @@ final class KycodeConnectionStore: ObservableObject {
         goalModeSource: KycodePendingGoalModeSource,
         featureSource: KycodePendingFeatureSource
     ) -> KycodeSessionSummary {
+        var item = item
+        if let pending = pendingPinnedUpdates[item.windowId] {
+            item.isPinned = pending.pinned
+        }
         let minimizedItem = reconcilePendingMinimizedUpdate(with: item, now: now)
         let renamedItem = reconcilePendingRenameUpdate(with: minimizedItem, now: now)
         let collaborationItem = reconcilePendingCollaborationProjectUpdate(
@@ -9492,7 +9283,8 @@ final class KycodeConnectionStore: ObservableObject {
             pendingSubagent: summary.pendingSubagent ?? existing.pendingSubagent,
             collaborationProjectId: summary.collaborationProjectId ?? existing.collaborationProjectId,
             collaborationProjectName: summary.collaborationProjectName ?? existing.collaborationProjectName,
-            sessionName: summary.sessionName ?? existing.sessionName
+            sessionName: summary.sessionName ?? existing.sessionName,
+            isPinned: summary.isPinned ?? existing.isPinned
         )
     }
 
@@ -9573,7 +9365,8 @@ final class KycodeConnectionStore: ObservableObject {
                 pendingSubagent: detail.pendingSubagent,
                 collaborationProjectId: detail.collaborationProjectId,
                 collaborationProjectName: detail.collaborationProjectName,
-                sessionName: detail.sessionName
+                sessionName: detail.sessionName,
+                isPinned: detail.isPinned
             )
         }
 
@@ -9615,7 +9408,8 @@ final class KycodeConnectionStore: ObservableObject {
                 pendingSubagent: item.pendingSubagent,
                 collaborationProjectId: item.collaborationProjectId,
                 collaborationProjectName: item.collaborationProjectName,
-                sessionName: item.sessionName
+                sessionName: item.sessionName,
+                isPinned: item.isPinned
             )
         }
         return optimisticMessage
@@ -9686,7 +9480,8 @@ final class KycodeConnectionStore: ObservableObject {
             pendingSubagent: detail.pendingSubagent,
             collaborationProjectId: detail.collaborationProjectId,
             collaborationProjectName: detail.collaborationProjectName,
-            sessionName: detail.sessionName
+            sessionName: detail.sessionName,
+            isPinned: detail.isPinned
         )
     }
 
@@ -9770,7 +9565,8 @@ final class KycodeConnectionStore: ObservableObject {
             pendingSubagent: item.pendingSubagent,
             collaborationProjectId: item.collaborationProjectId,
             collaborationProjectName: item.collaborationProjectName,
-            sessionName: item.sessionName
+            sessionName: item.sessionName,
+            isPinned: item.isPinned
         )
     }
 
@@ -9825,7 +9621,8 @@ final class KycodeConnectionStore: ObservableObject {
             pendingSubagent: detail.pendingSubagent,
             collaborationProjectId: detail.collaborationProjectId,
             collaborationProjectName: detail.collaborationProjectName,
-            sessionName: detail.sessionName
+            sessionName: detail.sessionName,
+            isPinned: detail.isPinned
         )
     }
 
@@ -10003,13 +9800,22 @@ final class KycodeConnectionStore: ObservableObject {
         sessionId: String,
         sessionName: String
     ) async throws -> KycodeCreateSessionEnvelope {
-        let body = try JSONEncoder().encode([
+        var parameters = [
             "projectPath": projectPath,
             "sessionId": sessionId,
             "sessionName": sessionName,
             "model": Self.newSessionDefaultModel,
             "reasoningEffort": Self.newSessionDefaultReasoningEffort
-        ])
+        ]
+        #if DEBUG
+        // Live UI checks must never spend tokens on the user's normal model.
+        let environment = ProcessInfo.processInfo.environment
+        if environment["KYCODE_UI_TEST_LIVE_PERSONAL"] == "1" || environment["KYCODE_UI_TEST_LIVE_PUKY"] == "1" {
+            parameters["model"] = "gpt-5.6-luna"
+            parameters["reasoningEffort"] = "low"
+        }
+        #endif
+        let body = try JSONEncoder().encode(parameters)
         let request = try makeRequest(
             credentials: credentials,
             path: "/api/mobile/sessions",
@@ -10286,7 +10092,7 @@ final class KycodeConnectionStore: ObservableObject {
     private func postDelete(
         _ credentials: KycodeConnectionCredentials,
         windowId: String
-    ) async throws -> KycodeDeleteEnvelope {
+    ) async throws -> KycodeWindowCommandEnvelope {
         let request = try makeRequest(
             credentials: credentials,
             path: "/api/mobile/sessions/\(kycodeEncodedPathComponent(windowId))/permanent",
@@ -10295,22 +10101,7 @@ final class KycodeConnectionStore: ObservableObject {
             timeout: Self.sendRequestTimeout
         )
         requestObserver?(request)
-        return try await perform(request, decode: KycodeDeleteEnvelope.self)
-    }
-
-    private func fetchCommandStatus(
-        _ credentials: KycodeConnectionCredentials,
-        commandId: String
-    ) async throws -> KycodeCommandStatusEnvelope {
-        let request = try makeRequest(
-            credentials: credentials,
-            path: "/api/mobile/commands/\(kycodeEncodedPathComponent(commandId))",
-            method: "GET",
-            body: nil,
-            timeout: Self.sendRequestTimeout
-        )
-        requestObserver?(request)
-        return try await perform(request, decode: KycodeCommandStatusEnvelope.self)
+        return try await perform(request, decode: KycodeWindowCommandEnvelope.self)
     }
 
     private func postCreateSubagent(
@@ -11028,7 +10819,8 @@ final class KycodeConnectionStore: ObservableObject {
         isReconnecting = false
         reconnectStatusText = nil
         canRetryReconnectManually = false
-        errorMessage = nil
+        // A healthy stream clears connection feedback, not an action failure
+        // the user still needs to see (for example, a rejected archive).
     }
 
     private var shouldScheduleBootstrapReconnectLoop: Bool {

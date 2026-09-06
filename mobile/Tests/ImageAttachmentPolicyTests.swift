@@ -5272,7 +5272,7 @@ final class SessionDeletionTests: XCTestCase {
                     response,
                     Data(
                         """
-                        {"ok":true,"commandId":"delete-1","queuedAt":1,"windowId":"delete-window"}
+                        {"ok":true,"commandId":"delete-1","commandState":"accepted","inserted":true,"durable":true,"queuedAt":1,"windowId":"delete-window"}
                         """.utf8
                     )
                 )
@@ -5289,14 +5289,12 @@ final class SessionDeletionTests: XCTestCase {
             }
             return (response, deleteAccepted ? emptySessionData : sessionData)
         }
-        defer {
-            urlSession.invalidateAndCancel()
-        }
 
         let store = KycodeConnectionStore(
             urlSession: urlSession,
             initialProfileIdOverride: "puky"
         )
+        defer { store.disconnect() }
         store.baseURLInput = "https://mock.kycode.test"
         store.authTokenInput = "test-token"
         await store.connect()
@@ -5321,7 +5319,6 @@ final class SessionDeletionTests: XCTestCase {
             observedDeleteRequest?.value(forHTTPHeaderField: "Authorization"),
             "Bearer test-token"
         )
-        store.disconnect()
     }
 
     @MainActor
@@ -5352,7 +5349,7 @@ final class SessionDeletionTests: XCTestCase {
                 return (
                     response,
                     Data(
-                        #"{"ok":true,"commandId":"delete-failed","queuedAt":1,"windowId":"delete-window"}"#.utf8
+                        #"{"ok":true,"commandId":"delete-failed","commandState":"accepted","inserted":true,"durable":true,"queuedAt":1,"windowId":"delete-window"}"#.utf8
                     )
                 )
             }
@@ -5366,26 +5363,29 @@ final class SessionDeletionTests: XCTestCase {
             }
             return (response, sessionData)
         }
-        defer {
-            urlSession.invalidateAndCancel()
-        }
 
-        let store = KycodeConnectionStore(urlSession: urlSession)
+        let store = KycodeConnectionStore(urlSession: urlSession, initialProfileIdOverride: "puky")
+        defer { store.disconnect() }
         store.baseURLInput = "https://mock.kycode.test"
         store.authTokenInput = "test-token"
         await store.connect()
 
         let deleted = await store.deleteSession(windowId: "delete-window")
 
-        XCTAssertFalse(deleted)
+        XCTAssertTrue(deleted, "The return value confirms acceptance, not completion.")
+        store.applyDurableCommandStateChanged(KycodeCommandStateChangedEvent(
+            commandId: "delete-failed", state: .unknown, error: "thread/delete failed"
+        ))
+        await store.refreshSessionsNow()
         XCTAssertEqual(store.sessions.map(\.windowId), ["delete-window"])
         XCTAssertEqual(store.detail(for: "delete-window")?.displayName, "QA borrado")
-        XCTAssertEqual(store.errorMessage, "thread/delete failed")
-        store.disconnect()
+        XCTAssertEqual(store.errorMessage, "No se pudo archivar la sesión. thread/delete failed")
+        store.dismissError()
+        XCTAssertNil(store.errorMessage)
     }
 
     @MainActor
-    func testMinimizeWaitsForDurableStateAndSurvivesReload() async throws {
+    func testMinimizeAppliesDurableEventAndSurvivesReload() async throws {
         let summary = makeSummary()
         let activeSessionData = try JSONEncoder().encode(
             KycodeSessionsEnvelope(
@@ -5425,7 +5425,7 @@ final class SessionDeletionTests: XCTestCase {
                 return (
                     response,
                     Data(
-                        #"{"ok":true,"commandId":"minimize-1","queuedAt":1,"windowId":"delete-window","minimized":true}"#.utf8
+                        #"{"ok":true,"commandId":"minimize-1","commandState":"accepted","inserted":true,"durable":true,"queuedAt":1,"windowId":"delete-window","minimized":true}"#.utf8
                     )
                 )
             }
@@ -5440,9 +5440,9 @@ final class SessionDeletionTests: XCTestCase {
             }
             return (response, minimizeAccepted ? minimizedSessionData : activeSessionData)
         }
-        defer { urlSession.invalidateAndCancel() }
 
-        let store = KycodeConnectionStore(urlSession: urlSession)
+        let store = KycodeConnectionStore(urlSession: urlSession, initialProfileIdOverride: "puky")
+        defer { store.disconnect() }
         store.baseURLInput = "https://mock.kycode.test"
         store.authTokenInput = "test-token"
         await store.connect()
@@ -5450,7 +5450,10 @@ final class SessionDeletionTests: XCTestCase {
         let minimized = await store.setSessionMinimized(windowId: "delete-window", minimized: true)
 
         XCTAssertTrue(minimized)
-        XCTAssertTrue(observedCommandStatus)
+        store.applyDurableCommandStateChanged(KycodeCommandStateChangedEvent(
+            commandId: "minimize-1", state: .completed, error: nil
+        ))
+        XCTAssertFalse(observedCommandStatus, "Terminal events do not require status polling.")
         XCTAssertEqual(observedMinimizeRequest?.httpMethod, "POST")
         XCTAssertTrue(store.sessions.first?.minimized == true)
         await store.refreshSessionsNow()
@@ -5458,11 +5461,10 @@ final class SessionDeletionTests: XCTestCase {
             store.sessions.first?.minimized == true,
             "La sesión minimizada no debe reaparecer como activa después de recargar"
         )
-        store.disconnect()
     }
 
     @MainActor
-    func testMinimizeUsesDurableSnapshotWhenLegacyRelayHasNoCommandStatusEndpoint() async throws {
+    func testMinimizeReconcilesSnapshotWithoutCommandStatusPolling() async throws {
         let activeSessionData = try JSONEncoder().encode(
             KycodeSessionsEnvelope(
                 ok: true,
@@ -5497,7 +5499,7 @@ final class SessionDeletionTests: XCTestCase {
                         headerFields: ["Content-Type": "application/json"]
                     )),
                     Data(
-                        #"{"ok":true,"commandId":"legacy-minimize","queuedAt":1,"windowId":"delete-window","minimized":true}"#.utf8
+                        #"{"ok":true,"commandId":"legacy-minimize","commandState":"accepted","inserted":true,"durable":true,"queuedAt":1,"windowId":"delete-window","minimized":true}"#.utf8
                     )
                 )
             }
@@ -5523,9 +5525,9 @@ final class SessionDeletionTests: XCTestCase {
                 minimizeAccepted ? minimizedSessionData : activeSessionData
             )
         }
-        defer { urlSession.invalidateAndCancel() }
 
-        let store = KycodeConnectionStore(urlSession: urlSession)
+        let store = KycodeConnectionStore(urlSession: urlSession, initialProfileIdOverride: "puky")
+        defer { store.disconnect() }
         store.baseURLInput = "https://mock.kycode.test"
         store.authTokenInput = "test-token"
         await store.connect()
@@ -5533,9 +5535,9 @@ final class SessionDeletionTests: XCTestCase {
         let minimized = await store.setSessionMinimized(windowId: "delete-window", minimized: true)
 
         XCTAssertTrue(minimized)
-        XCTAssertTrue(observedLegacyStatusRequest)
+        await store.refreshSessionsNow()
+        XCTAssertFalse(observedLegacyStatusRequest)
         XCTAssertTrue(store.sessions.first?.minimized == true)
-        store.disconnect()
     }
 
     @MainActor
@@ -5566,7 +5568,7 @@ final class SessionDeletionTests: XCTestCase {
                 return (
                     response,
                     Data(
-                        #"{"ok":true,"commandId":"minimize-failed","queuedAt":1,"windowId":"delete-window","minimized":true}"#.utf8
+                        #"{"ok":true,"commandId":"minimize-failed","commandState":"accepted","inserted":true,"durable":true,"queuedAt":1,"windowId":"delete-window","minimized":true}"#.utf8
                     )
                 )
             }
@@ -5580,19 +5582,24 @@ final class SessionDeletionTests: XCTestCase {
             }
             return (response, sessionData)
         }
-        defer { urlSession.invalidateAndCancel() }
 
-        let store = KycodeConnectionStore(urlSession: urlSession)
+        let store = KycodeConnectionStore(urlSession: urlSession, initialProfileIdOverride: "puky")
+        defer { store.disconnect() }
         store.baseURLInput = "https://mock.kycode.test"
         store.authTokenInput = "test-token"
         await store.connect()
 
         let minimized = await store.setSessionMinimized(windowId: "delete-window", minimized: true)
 
-        XCTAssertFalse(minimized)
+        XCTAssertTrue(minimized, "The optimistic change is pending after acceptance.")
+        store.applyDurableCommandStateChanged(KycodeCommandStateChangedEvent(
+            commandId: "minimize-failed", state: .failed, error: "thread/minimize failed"
+        ))
+        await store.refreshSessionsNow()
         XCTAssertFalse(store.sessions.first?.minimized == true)
-        XCTAssertEqual(store.errorMessage, "thread/minimize failed")
-        store.disconnect()
+        XCTAssertEqual(store.errorMessage, "No se pudo cambiar la visibilidad de la sesión. thread/minimize failed")
+        store.dismissError()
+        XCTAssertNil(store.errorMessage)
     }
 
     @MainActor
@@ -5627,7 +5634,7 @@ final class SessionDeletionTests: XCTestCase {
                     response,
                     Data(
                         """
-                        {"ok":true,"commandId":"subagent-start","queuedAt":\(queuedAt),"sourceWindowId":"delete-window","sourceSessionId":"delete-session","projectPath":"/tmp/project","projectName":"Proyecto","sessionId":"\(sessionId)","engine":"codex"}
+                        {"ok":true,"commandId":"subagent-start","commandState":"accepted","inserted":true,"durable":true,"queuedAt":\(queuedAt),"sourceWindowId":"delete-window","sourceSessionId":"delete-session","projectPath":"/tmp/project","projectName":"Proyecto","sessionId":"\(sessionId)","engine":"codex"}
                         """.utf8
                     )
                 )
@@ -5701,11 +5708,9 @@ final class SessionDeletionTests: XCTestCase {
                 )
             )
         }
-        defer {
-            urlSession.invalidateAndCancel()
-        }
 
-        let store = KycodeConnectionStore(urlSession: urlSession)
+        let store = KycodeConnectionStore(urlSession: urlSession, initialProfileIdOverride: "puky")
+        defer { store.disconnect() }
         store.baseURLInput = "https://mock.kycode.test"
         store.authTokenInput = "test-token"
         await store.connect()
@@ -5717,7 +5722,7 @@ final class SessionDeletionTests: XCTestCase {
 
         XCTAssertEqual(result?.windowId, "child-window")
         XCTAssertEqual(result?.status, "working")
-        XCTAssertTrue(observedCommandStatusRequest)
+        XCTAssertFalse(observedCommandStatusRequest, "The authoritative session confirms the first turn.")
         XCTAssertGreaterThanOrEqual(postCreateSessionPollCount, 2)
         XCTAssertEqual(
             store.sessions.first(where: { $0.windowId == "child-window" })?.messageCount,
@@ -5727,7 +5732,6 @@ final class SessionDeletionTests: XCTestCase {
             store.sessions.first(where: { $0.windowId == "child-window" })?
                 .pendingSubagent?.childMessageSentAt
         )
-        store.disconnect()
     }
 
     @MainActor
@@ -5759,14 +5763,12 @@ final class SessionDeletionTests: XCTestCase {
                 ? (response, Data(#"{"error":"not found"}"#.utf8))
                 : (response, sessionData)
         }
-        defer {
-            urlSession.invalidateAndCancel()
-        }
 
         let store = KycodeConnectionStore(
             urlSession: urlSession,
             initialProfileIdOverride: "puky"
         )
+        defer { store.disconnect() }
         store.baseURLInput = "https://mock.kycode.test"
         store.authTokenInput = "test-token"
         await store.connect()
@@ -5776,7 +5778,6 @@ final class SessionDeletionTests: XCTestCase {
         XCTAssertEqual(store.sessions.map(\.windowId), ["delete-window"])
         XCTAssertEqual(store.detail(for: "delete-window")?.displayName, "QA borrado")
         XCTAssertEqual(store.errorMessage, "not found")
-        store.disconnect()
     }
 
     func testCollaborationProjectMetadataKeepsSessionNameIndependent() throws {
@@ -5866,21 +5867,19 @@ final class SessionDeletionTests: XCTestCase {
                     response,
                     Data(
                         """
-                        {"ok":true,"commandId":"assign-1","queuedAt":1,"windowId":"delete-window","project":{"id":"collaboration-project:fermin","name":"fermin","activeSessionCount":1},"unchanged":false}
+                        {"ok":true,"commandId":"assign-1","commandState":"accepted","inserted":true,"durable":true,"queuedAt":1,"windowId":"delete-window","project":{"id":"collaboration-project:fermin","name":"fermin","activeSessionCount":1},"unchanged":false}
                         """.utf8
                     )
                 )
             }
             return (response, sessionData)
         }
-        defer {
-            urlSession.invalidateAndCancel()
-        }
 
         let store = KycodeConnectionStore(
             urlSession: urlSession,
             initialProfileIdOverride: "puky"
         )
+        defer { store.disconnect() }
         store.baseURLInput = "https://mock.kycode.test"
         store.authTokenInput = "test-token"
         await store.connect()
@@ -5892,7 +5891,6 @@ final class SessionDeletionTests: XCTestCase {
         XCTAssertEqual(assignmentBody?["projectId"], project.id)
         XCTAssertEqual(assignmentBody?["projectName"], project.name)
         XCTAssertEqual(store.sessions.first?.collaborationDisplayName, "fermin: QA borrado")
-        store.disconnect()
     }
 
     @MainActor
@@ -5929,6 +5927,7 @@ final class SessionDeletionTests: XCTestCase {
             urlSession: urlSession,
             initialProfileIdOverride: "puky"
         )
+        defer { store.disconnect() }
         store.baseURLInput = "https://mock.kycode.test"
         store.authTokenInput = "test-token"
 
@@ -6087,7 +6086,6 @@ final class SessionDeletionTests: XCTestCase {
                 $0.url?.path.hasSuffix("/message") == true
             })
         )
-        store.disconnect()
     }
 
     @MainActor
@@ -6226,7 +6224,6 @@ final class SessionDeletionTests: XCTestCase {
             store.promptTransformTimedOutMessageIds(windowId: "delete-window").isEmpty
         )
         XCTAssertEqual(detailRequestCount, 13)
-        store.disconnect()
     }
 
     @MainActor
@@ -6313,7 +6310,6 @@ final class SessionDeletionTests: XCTestCase {
         }
 
         XCTAssertEqual(detailRequestCount, 3)
-        store.disconnect()
     }
 
     private func makeSummary(

@@ -366,22 +366,22 @@ enum KycodeSessionPinningPolicy {
         identifiers.sorted().joined(separator: "\n")
     }
 
-    static func isPinned(windowId: String, unpinnedWindowIds: Set<String>) -> Bool {
-        !unpinnedWindowIds.contains(windowId)
+    static func isPinned(windowId: String, unpinnedWindowIds: Set<String>, sharedPinned: Bool? = nil) -> Bool {
+        sharedPinned ?? !unpinnedWindowIds.contains(windowId)
     }
 
     static func pinnedSessions(
         in sessions: [KycodeSessionSummary],
         unpinnedWindowIds: Set<String>
     ) -> [KycodeSessionSummary] {
-        sessions.filter { isPinned(windowId: $0.windowId, unpinnedWindowIds: unpinnedWindowIds) }
+        sessions.filter { isPinned(windowId: $0.windowId, unpinnedWindowIds: unpinnedWindowIds, sharedPinned: $0.isPinned) }
     }
 
     static func unpinnedSessions(
         in sessions: [KycodeSessionSummary],
         unpinnedWindowIds: Set<String>
     ) -> [KycodeSessionSummary] {
-        sessions.filter { !isPinned(windowId: $0.windowId, unpinnedWindowIds: unpinnedWindowIds) }
+        sessions.filter { !isPinned(windowId: $0.windowId, unpinnedWindowIds: unpinnedWindowIds, sharedPinned: $0.isPinned) }
     }
 }
 
@@ -602,7 +602,8 @@ struct KycodeRootView: View {
     private func isSessionPinned(_ windowId: String) -> Bool {
         KycodeSessionPinningPolicy.isPinned(
             windowId: windowId,
-            unpinnedWindowIds: unpinnedWindowIds
+            unpinnedWindowIds: unpinnedWindowIds,
+            sharedPinned: store.sessions.first(where: { $0.windowId == windowId })?.isPinned
         )
     }
 
@@ -1927,6 +1928,7 @@ struct KycodeRootView: View {
                                                         systemImage: isSessionPinned(session.windowId) ? "pin.slash" : "pin.fill"
                                                     )
                                                 }
+                                                .disabled(store.isPinningSession(session.windowId))
                                                 .accessibilityIdentifier("pin-session-\(session.windowId)")
 
                                                 Button {
@@ -2010,6 +2012,10 @@ struct KycodeRootView: View {
                     .padding(.horizontal, layout.outerPadding)
                     .padding(.top, layout.verticalPadding)
                     .padding(.bottom, layout.isTablet ? 166 : 158)
+                    .animation(
+                        reduceMotion ? nil : .spring(response: 0.3, dampingFraction: 1),
+                        value: pinnedSessions.map(\.windowId)
+                    )
                 }
                 .ignoresSafeArea(.container, edges: .bottom)
                 .scrollDismissesKeyboard(.interactively)
@@ -2231,6 +2237,7 @@ struct KycodeRootView: View {
             }
             .buttonStyle(PressableButtonStyle(scale: 0.92, opacity: 0.76))
             .accessibilityLabel("Fijar \(session.collaborationSessionName)")
+            .disabled(store.isPinningSession(session.windowId))
             .accessibilityHint("Mueve la sesión a la lista principal")
             .accessibilityIdentifier("pin-unpinned-session-\(session.windowId)")
         }
@@ -2426,18 +2433,13 @@ struct KycodeRootView: View {
     }
 
     private func togglePinned(_ windowId: String) {
-        var next = unpinnedWindowIds
         let wasPinned = isSessionPinned(windowId)
-        if wasPinned {
-            next.insert(windowId)
-        } else {
-            next.remove(windowId)
-        }
-        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.18)) {
-            unpinnedWindowIdsStorage = KycodeSessionPinningPolicy.storageValue(for: next)
-        }
         AppHaptics.shared.play(.conversationSelection)
-        showDashboardNotice(wasPinned ? "Sesión movida a Sin fijar" : "Sesión fijada")
+        Task { @MainActor in
+            if await store.setSessionPinned(windowId: windowId, pinned: !wasPinned) {
+                showDashboardNotice(wasPinned ? "Sesión movida a Sin fijar" : "Sesión fijada")
+            }
+        }
     }
 
     private func sessionCount(for filter: DashboardSessionFilter) -> Int {
@@ -5249,26 +5251,6 @@ struct DashboardSessionMetadataUITestHarness: View {
 }
 #endif
 
-private struct DashboardStatusBadge: View {
-    let label: String
-    let color: Color
-    var compact = false
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(color)
-                .frame(width: compact ? 7 : 8, height: compact ? 7 : 8)
-            Text(label)
-                .font(.system(size: compact ? 10 : 10, weight: .bold, design: .default))
-                .lineLimit(1)
-        }
-        .foregroundStyle(AppTheme.ink)
-        .padding(.horizontal, compact ? 6 : 0)
-        .padding(.vertical, compact ? 3 : 0)
-        .background(compact ? color.opacity(0.12) : Color.clear, in: Rectangle())
-    }
-}
 
 private struct DashboardActionNotice: View {
     let text: String
@@ -5342,22 +5324,6 @@ private struct SessionReorderDropDelegate: DropDelegate {
     }
 }
 
-// Estado como etiqueta de color (punto + palabra), no pill.
-private struct StatusBadge: View {
-    let label: String
-    let color: Color
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(color)
-                .frame(width: 7, height: 7)
-            Text(label)
-                .font(.system(size: 12, weight: .medium, design: .default))
-                .foregroundStyle(color)
-        }
-    }
-}
 
 private extension View {
     func compactTouchTarget(minWidth: CGFloat = 44) -> some View {
@@ -14711,147 +14677,5 @@ private struct FloatingComposerButtonChrome<Content: View>: View {
             }
             .overlay { content }
             .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.s, style: .continuous))
-    }
-}
-
-private struct PremiumCircleButtonChrome: View {
-    let size: CGFloat
-    let fill: Color
-    let ring: Color
-    var isProminent = false
-
-    var body: some View {
-        Rectangle()
-            .fill(fill)
-            .frame(width: size, height: size)
-    }
-}
-
-private struct CircleComposerButton: View {
-    let icon: String
-    let foreground: Color
-    let background: Color
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: icon)
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(foreground)
-                .frame(width: 44, height: 44)
-                .background(background, in: Rectangle())
-        }
-        .buttonStyle(PressableButtonStyle())
-    }
-}
-
-private struct ComposerOptionsSheet: View {
-    @Binding var promptImproverEnabled: Bool
-    @Binding var explainerEnabled: Bool
-
-    let codeContextEnabled: Bool?
-    let canControlFeatures: Bool
-    let isUpdatingFeatures: Bool
-    let onPromptImproverChanged: (Bool) -> Void
-    let onExplainerChanged: (Bool) -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            Text("Sync desktop.")
-                .font(.system(size: 14, weight: .medium, design: .default))
-                .foregroundStyle(AppTheme.inkSoft)
-
-            ComposerToggleRow(
-                title: "Prompt Improver",
-                subtitle: "Mejora el prompt antes de enviarlo",
-                icon: "square.and.pencil",
-                isOn: Binding(
-                    get: { promptImproverEnabled },
-                    set: { newValue in
-                        promptImproverEnabled = newValue
-                        onPromptImproverChanged(newValue)
-                    }
-                ),
-                disabled: isUpdatingFeatures || !canControlFeatures
-            )
-
-            ComposerToggleRow(
-                title: "Explainer",
-                subtitle: "Activa el modo explicador sincronizado",
-                icon: "text.magnifyingglass",
-                isOn: Binding(
-                    get: { explainerEnabled },
-                    set: { newValue in
-                        explainerEnabled = newValue
-                        onExplainerChanged(newValue)
-                    }
-                ),
-                disabled: isUpdatingFeatures || !canControlFeatures
-            )
-
-            if let codeContextEnabled {
-                HStack {
-                    Text("Code context")
-                        .font(.system(size: 13, weight: .semibold, design: .default))
-                        .foregroundStyle(AppTheme.inkMuted)
-                    Spacer()
-                    Text(codeContextEnabled ? "On" : "Off")
-                        .font(.system(size: 13, weight: .bold, design: .default))
-                        .foregroundStyle(codeContextEnabled ? AppTheme.accentGreen : AppTheme.inkMuted)
-                }
-            }
-        }
-        .padding(18)
-        .background(BreathingBackground())
-    }
-}
-
-private struct ComposerToggleRow: View {
-    let title: String
-    let subtitle: String
-    let icon: String
-    let isOn: Binding<Bool>
-    let disabled: Bool
-
-    var body: some View {
-        HStack(spacing: 12) {
-            ZStack {
-                Rectangle()
-                    .fill(AppTheme.cardSurfaceRaised)
-                    .frame(width: 38, height: 38)
-                Image(systemName: icon)
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(AppTheme.ink)
-            }
-
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 8) {
-                    Text(title)
-                        .font(.system(size: 15, weight: .bold, design: .default))
-                        .foregroundStyle(AppTheme.ink)
-                    Text(isOn.wrappedValue ? "On" : "Off")
-                        .font(.system(size: 11, weight: .bold, design: .default))
-                        .foregroundStyle(isOn.wrappedValue ? AppTheme.accentGreen : AppTheme.inkMuted)
-                }
-            }
-
-            Spacer(minLength: 10)
-
-            Toggle("", isOn: isOn)
-                .labelsHidden()
-                .tint(AppTheme.accentGreen)
-        }
-        .padding(14)
-        .background(
-            AppTheme.cardSurface,
-            in: RoundedRectangle(cornerRadius: AppTheme.Radius.l, style: .continuous)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: AppTheme.Radius.l, style: .continuous)
-                .stroke(Color.clear, lineWidth: 1)
-        )
-        .disabled(disabled)
-        .opacity(disabled ? 0.6 : 1)
-        .accessibilityHint(subtitle)
     }
 }

@@ -72,48 +72,10 @@ targets:
         groups:
           - group.dev.fermincode.mobile
     sources:
-      - path: Sources/App/ExplainerApp.swift
-      - path: Sources/App/KycodeConnectionStore.swift
-      - path: Sources/App/SessionHistory.swift
-      - path: Sources/App/InteractiveLinks.swift
-      - path: Sources/App/FileLink.swift
-      - path: Sources/App/FileViewerViewModel.swift
-      - path: Sources/App/ExplanationViewerViewModel.swift
-      - path: Sources/App/MobileLiveMessage.swift
-      - path: Sources/App/KycodeBonjourDiscovery.swift
-      - path: Sources/App/AudioRecordingService.swift
-      - path: Sources/App/BackgroundRecordingState.swift
-      - path: Sources/App/KycodeKeychain.swift
-      - path: Sources/App/HapticFeedback.swift
-      - path: Sources/App/Services/ExplainerNarrationService.swift
-      - path: Sources/App/Services/MistralTranscriptionService.swift
-      - path: Sources/App/Services/VoiceTranscription.swift
-      - path: Sources/App/Services/VoiceIsolation.swift
-      - path: Sources/App/Services/VoiceSpeakerVerification.swift
-      - path: Sources/App/TweetClipboardIntakeStore.swift
-      - path: Sources/App/TweetAppRouteStore.swift
-      - path: Sources/App/Models/TweetConversation.swift
-      - path: Sources/App/Views/AppTheme.swift
-      - path: Sources/App/Views/KycodeRootView.swift
-      - path: Sources/App/Views/FileViewerSheet.swift
-      - path: Sources/App/Views/ExplanationViewerSheet.swift
-      - path: Sources/App/Views/FullScreenTextEditorSheet.swift
-      - path: Sources/App/Views/KycodeSessionHistoryView.swift
-      - path: Sources/App/Views/TweetHistoryView.swift
+      - path: Sources/App
       - path: Sources/ShareExtension/ShareTweetGeneratorView.swift
       - path: Sources/ShareExtension/ShareTweetGenerationSupport.swift
-      - path: Sources/Shared/LoggingService.swift
-      - path: Sources/Shared/PromptLibrary.swift
-      - path: Sources/Shared/SharedInbox.swift
-      - path: Sources/Shared/TweetGenerationBackgroundCoordinator.swift
-      - path: Sources/Shared/TweetGenerationJob.swift
-      - path: Sources/Shared/TweetGenerationNotifications.swift
-      - path: Sources/Shared/TweetGeneratorModelStore.swift
-      - path: Sources/Shared/TweetComposeDeepLink.swift
-      - path: Sources/Shared/TweetConversationReadStore.swift
-      - path: Sources/Shared/TweetSourceLink.swift
-      - path: Sources/Shared/TweetPendingComposeStore.swift
-      - path: Sources/Shared/XMLExtractor.swift
+      - path: Sources/Shared
       - path: Resources/App/Assets.xcassets
         buildPhase: resources
     info:
@@ -160,16 +122,6 @@ targets:
       - target: ExplainerShareExtension
       - package: Eagle
     postBuildScripts:
-      - name: Embed Share Extension
-        basedOnDependencyAnalysis: false
-        script: |
-          EXT_NAME="ExplainerShareExtension.appex"
-          SRC="${BUILT_PRODUCTS_DIR}/${EXT_NAME}"
-          DEST="${TARGET_BUILD_DIR}/${PLUGINS_FOLDER_PATH}"
-          if [ -d "${SRC}" ]; then
-            mkdir -p "${DEST}"
-            rsync -a "${SRC}" "${DEST}"
-          fi
       - name: Copy Secrets And Prompts
         basedOnDependencyAnalysis: false
         script: |
@@ -192,18 +144,7 @@ targets:
           - group.dev.fermincode.mobile
     sources:
       - path: Sources/ShareExtension
-      - path: Sources/Shared/LoggingService.swift
-      - path: Sources/Shared/PromptLibrary.swift
-      - path: Sources/Shared/SharedInbox.swift
-      - path: Sources/Shared/TweetGenerationBackgroundCoordinator.swift
-      - path: Sources/Shared/TweetGenerationJob.swift
-      - path: Sources/Shared/TweetGenerationNotifications.swift
-      - path: Sources/Shared/TweetGeneratorModelStore.swift
-      - path: Sources/Shared/TweetComposeDeepLink.swift
-      - path: Sources/Shared/TweetConversationReadStore.swift
-      - path: Sources/Shared/TweetSourceLink.swift
-      - path: Sources/Shared/TweetPendingComposeStore.swift
-      - path: Sources/Shared/XMLExtractor.swift
+      - path: Sources/Shared
       - path: Resources/ShareExtension/Assets.xcassets
         buildPhase: resources
     info:

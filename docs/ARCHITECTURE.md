@@ -2,269 +2,118 @@
 
 [← Documentación](README.md)
 
-## Resumen
+Fermín permite dirigir sesiones de Codex en una Mac propia desde otros
+dispositivos. Codex sigue siendo el agente; Fermín agrega clientes, organización
+y persistencia alrededor de las órdenes.
 
-Fermín pone dos piezas entre el cliente y Codex:
-
-- el **relay**, que recibe las órdenes, las guarda y mantiene su historia; y
-- el **engine**, el programa que corre junto a Codex en la Mac host.
-
-```text
-Cliente
-   ↓
-Relay
-   ↓
-Engine
-   ↓
-Codex App Server
-```
-
-Los clientes no se conectan directamente al engine. Codex App Server permanece
-local en el host.
-
-Fermín mueve órdenes y eventos, no píxeles. No transmite la pantalla de la Mac
-ni funciona como escritorio remoto.
-
-## Topología implementada en `v0.1`
-
-En `v0.1`, cada relay trabaja con una generación activa de engine. Para conectar
-dos hosts se usan dos pares independientes.
+## Cuatro responsabilidades
 
 ```text
-Primary
-   ↓
-Relay
-   ↓
-Engine
-   ↓
-Codex
+Clientes: iPhone / Mac
+          ↓
+Relay: recepción y eventos
+          ↓
+Engine: conexión con el host
+          ↓
+Codex App Server: ejecución
 ```
 
-```text
-Secondary
-   ↓
-Relay
-   ↓
-Engine
-   ↓
-Codex
-```
+- Los clientes envían operaciones por REST, reciben eventos SSE y guardan
+  tokens en Keychain. No ejecutan Codex ni se conectan directamente al engine.
+- El relay autentica, guarda órdenes y eventos en SQLite y los entrega al
+  engine. Puede seguir recibiendo mientras éste no esté conectado.
+- El engine guarda su estado local, inicia App Server por stdio y adapta las
+  operaciones a threads y turns. Mantiene un carril de comandos por sesión.
+- Codex razona y usa las herramientas disponibles en el host. Los scripts,
+  simuladores y servicios particulares del operador no forman parte de Fermín.
 
-Mobile y Desktop ofrecen los perfiles Primary, Secondary y All. Elegir un
-perfil es elegir el endpoint que recibe la orden. Las solicitudes actuales no
-incluyen un `hostId`, por lo que un solo relay todavía no puede elegir entre
-varios engines.
-
-La versión actual permite:
-
-- varios clientes sobre el mismo par relay–engine;
-- selección de dos hosts mediante perfiles de endpoint;
-- un cursor de eventos independiente por cliente; y
-- reconexión y replay desde ese cursor.
-
-## Topología objetivo
+Cada relay admite una generación activa de engine. Primary y Secondary son
+perfiles para dos pares independientes, no routing multi-host en una central.
+No hay una arquitectura futura comprometida.
 
-El diseño al que apunta Fermín registra varios hosts en un único relay.
-
-<a href="images/architecture/relay-star-mobile.svg">
-  <picture>
-    <source media="(max-width: 600px)" srcset="images/architecture/relay-star-mobile.svg">
-    <img src="images/architecture/relay-star-platform.svg" alt="N clientes conectados con M hosts mediante un relay durable central">
-  </picture>
-</a>
+## Por qué relay y engine son procesos separados
 
-<sub>La imagen se puede abrir en resolución completa. Representa la arquitectura
-objetivo, no el routing disponible en `v0.1`.</sub>
-
-En esa versión del diseño:
-
-1. cada host registra su identidad en el relay;
-2. cada orden identifica un host de destino;
-3. el relay autoriza y entrega la orden al engine correspondiente; y
-4. cada host mantiene su propia lease y generación de fencing.
+Recibir una orden no debería depender de que Codex esté listo en ese instante.
+El relay conserva el pedido; el engine necesita el entorno del host para
+entregarlo. Son responsabilidades distintas.
 
-La selección de varios hosts dentro de una instancia todavía no está
-implementada. El diagrama muestra la dirección del diseño, no una fecha de
-entrega.
+Podés ejecutarlos en la misma Mac. Es la instalación más simple, pero si esa
+Mac se apaga tampoco puede recibir pedidos. Separar el relay permite seguir
+recibiendo mientras el host está desconectado; no permite ejecutar sin él.
 
-## Componentes
+Si App Server termina, el engine deja de estar listo. Esta distribución no
+instala un supervisor que lo reinicie automáticamente.
 
-### Cliente
+## El recorrido de una orden
 
-Mobile y Desktop son clientes del relay. Ambos:
+1. El cliente genera una clave de idempotencia y envía la operación.
+2. El relay la guarda antes de responder `accepted`.
+3. El engine la recibe y guarda antes de responder `engineDurable`.
+4. Registra `sentToChild` antes de intentar la operación externa.
+5. Cuando termina el manejo de esa operación, registra `completed` o un error.
+6. Los clientes reciben eventos y reconstruyen su vista.
 
-- usan REST para consultas y órdenes durables;
-- reciben eventos mediante Server-Sent Events (SSE);
-- guardan un cursor por fuente para saber hasta dónde leyeron;
-- consultan el estado de forma acotada si SSE deja de responder; y
-- almacenan tokens en Keychain.
+En un envío de mensaje, `completed` puede indicar que empezó un turno. No
+certifica que el turno, la tarea o un despliegue hayan terminado. Consultá
+[los estados exactos](API.md#semántica-de-accepted).
 
-Los clientes no inician Codex, no ejecutan el engine y no exponen un servidor
-HTTP local.
+## Lo que no conviene quitar al simplificar
 
-### Relay
+- Persistencia antes de confirmar recepción.
+- Idempotencia: la misma clave reconoce una orden existente.
+- Replay: cada cliente retoma eventos desde su propio cursor; si faltan,
+  necesita un snapshot.
+- Lease y fencing: una conexión vieja no conserva autoridad después de que
+  entra una generación nueva.
+- El estado `unknown`: representa un intento cuyo resultado no se pudo
+  confirmar.
 
-El relay es la central que recibe y conserva el trabajo. En concreto:
+Una caída entre una acción externa y su registro no se puede deshacer con una
+transacción de SQLite. En la recuperación, las órdenes que quedaron en
+`sentToChild` pasan a `unknown`; no se reenvían automáticamente. El operador
+debe revisar la sesión y sus efectos antes de repetirlas.
 
-- autentica las solicitudes HTTP de clientes;
-- guarda una orden antes de responder `accepted`;
-- reconoce reintentos mediante claves de idempotencia;
-- conserva comandos, snapshots, eventos, alias y cursores en SQLite;
-- entrega eventos ordenados mediante SSE;
-- retoma la historia desde un cursor o `Last-Event-ID`;
-- mantiene el heartbeat y la lease del engine;
-- rechaza escrituras de generaciones anteriores mediante fencing; y
-- conserva trabajo pendiente si el engine se desconecta mientras el relay
-  continúa disponible.
+Tampoco una clave de idempotencia hace idempotente un despliegue o un comando
+de shell. No hay garantía de ejecución exactamente una vez.
 
-El relay no hace el trabajo de Codex ni entra directamente al workspace.
+## Qué aporta cada capa a la continuidad
 
-### Engine
+Si se desconecta un cliente, una orden ya aceptada permanece en el relay.
+Cuando vuelve, consume eventos desde su cursor.
 
-Cada Mac host ejecuta un engine, el programa local que conecta el relay con
-Codex. El engine:
+Si se desconecta el engine, el relay disponible conserva trabajo pendiente
+para su regreso. No hay un vencimiento general de órdenes demoradas:
+quien las envía debe considerar que pueden ejecutarse después.
 
-- inicia Codex App Server como un proceso local;
-- habla con App Server mediante JSONL por entrada y salida estándar;
-- comprueba la versión, el esquema, los modelos y las capacidades;
-- rechaza rutas fuera de `workspaceRoots`;
-- convierte operaciones de Fermín en threads y turns de Codex;
-- conserva sesiones, comandos, eventos, cursores, epochs y leases en SQLite
-  WAL;
-- expone sólo sesiones administradas por Fermín;
-- procesa cada sesión en un carril separado; y
-- mantiene App Server fuera de la red.
+Si falla el almacenamiento, esta arquitectura no sustituye respaldos ni
+recupera por sí sola los datos perdidos.
 
-Si App Server termina, el engine deja de mostrarse como listo. Para levantarlo
-otra vez de forma automática hace falta un supervisor configurado por quien
-opera la instalación. Si ejecutás todo a mano, ese reinicio no ocurre solo.
+Los carriles por sesión ordenan comandos, pero no aíslan archivos, simuladores
+o servidores compartidos entre sesiones.
 
-### Codex App Server
+## Funciones alrededor de Codex
 
-App Server sigue siendo el runtime de Codex: administra threads, turns,
-herramientas, sandbox, aprobaciones y ejecución. El engine adapta su protocolo;
-el relay y los clientes no vuelven a implementar esas funciones.
+El mejorador opcional prepara una transformación y la somete a otra revisión
+de fidelidad. Conserva el original y falla sin enviar la transformación si la
+revisión la rechaza. Son llamadas adicionales a un modelo, no una prueba
+formal de equivalencia. El explicador es otra función auxiliar.
 
-## Ciclo de una orden
+Los módulos `features.rs` y `observer.rs` implementan esas funciones.
+No reemplazan el runtime de herramientas de Codex.
 
-Este es el recorrido de una orden enviada desde Mobile al perfil Primary:
+El adaptador principal usa `approvalPolicy=never` y no ofrece aprobaciones
+interactivas. `workspaceRoots` valida rutas de Fermín; no es un sandbox del
+sistema operativo. [Modelo de seguridad](SECURITY_MODEL.md).
 
-1. Mobile genera una clave de idempotencia.
-2. Mobile envía la orden al relay Primary.
-3. El relay verifica el token y guarda la orden en SQLite.
-4. El relay responde `accepted`.
-5. El engine conectado recibe la orden y la guarda localmente.
-6. El carril de la sesión entrega la operación a Codex App Server.
-7. Los eventos regresan al relay y reciben una secuencia.
-8. Mobile y Desktop consumen esos eventos desde sus propios cursores.
+## Dónde leer el código
 
-`accepted` significa “el relay ya la tiene”. No significa que el engine la haya
-recibido ni que Codex haya terminado.
+- [API](../service/src/api.rs): contrato usado por ambos clientes.
+- [Relay](../service/src/relay.rs) y [bridge](../service/src/bridge.rs): transporte y entrega.
+- [Engine](../service/src/engine.rs): adaptación a App Server.
+- [Store](../service/src/store.rs): persistencia.
+- [Protocol](../service/src/protocol.rs): órdenes, estados y eventos.
 
-## Varios clientes sobre un host
+Los alias HTTP históricos siguen por compatibilidad. Una instalación nueva
+puede usar la API sin prefijo.
 
-Mobile y Desktop pueden abrir y modificar las mismas sesiones. Cada uno guarda
-su propio cursor, pero los dos reconstruyen el estado desde la misma historia
-del relay.
-
-Si los dos clientes mandan órdenes a una misma sesión, el relay guarda cada una
-y les asigna una secuencia. El engine procesa el trabajo de esa sesión en
-orden.
-
-Ese orden no significa que exista una garantía de ejecución exactamente una
-vez. Si Codex recibe una orden y el engine falla antes de guardar el resultado,
-el estado puede quedar como `unknown`. Antes de repetirla, el engine revisa qué
-ocurrió en la sesión.
-
-## Un cliente sobre varios hosts
-
-En `v0.1`, el cliente elige Primary o Secondary y manda la orden a una instancia
-distinta. Un solo relay todavía no puede elegir entre varios hosts.
-
-El diseño futuro mueve esa decisión al relay. Para hacerlo bien se necesitan
-identidad, autorización, almacenamiento, leases y fencing separados por host.
-Agregar sólo un campo `hostId` no alcanza.
-
-## Mecanismos de confiabilidad
-
-### Persistencia
-
-El relay y el engine guardan el estado antes de pasar a la etapa siguiente. La
-orden no depende solamente de que la conexión siga abierta en ese momento.
-
-### Idempotencia
-
-Si el cliente reintenta con la misma clave, el relay reconoce la misma
-operación. Una clave nueva representa una orden nueva.
-
-### Cola y entrega posterior
-
-Mientras el relay siga disponible, puede guardar trabajo hasta que el engine
-vuelva. Eso no enciende una Mac apagada.
-
-### Replay
-
-Cada cliente recuerda su último cursor y pide lo que ocurrió después. Si esa
-parte de la historia ya no está disponible, carga un snapshot completo.
-
-### Lease y fencing
-
-La lease indica si una conexión del engine sigue vigente. Si aparece una
-generación nueva, el fencing evita que la conexión anterior siga escribiendo.
-
-Los mensajes entre relay y engine incluyen versión de protocolo, identidad del
-engine, epoch de conexión, secuencia, ACK, cursor de reanudación y generación
-de fencing.
-
-## Comportamiento ante fallas
-
-### Cliente desconectado
-
-Una orden ya aceptada sigue guardada en el relay. Al volver, el cliente pide los
-eventos que ocurrieron después de su cursor.
-
-### Engine desconectado
-
-El relay puede guardar órdenes pendientes mientras siga disponible. Cuando el
-engine vuelve, recupera ese trabajo.
-
-### Relay y engine en la misma Mac
-
-Esta es la instalación local más simple. Si la Mac se apaga, el relay deja de
-recibir órdenes y el engine deja de ejecutar.
-
-### Relay y engine en máquinas separadas
-
-```text
-Cliente
-   ↓
-Relay disponible
-   ↓
-Engine intermitente
-```
-
-El relay puede recibir y guardar órdenes mientras el host está desconectado. No
-puede ejecutarlas sin el engine ni encender una Mac apagada.
-
-## Límites de publicación
-
-El repositorio incluye relay, engine, REST, SSE, WebSocket, SQLite, replay,
-idempotencia, leases, fencing y límites por `workspaceRoots`.
-
-No incluye cuentas, dominios, rutas de Cloudflare, servicios personales,
-tokens, rutas privadas del filesystem ni una sesión autenticada de Codex.
-
-Los alias `/fermin-code`, `/fermin-code-puky` y `/sync-hub` se conservan
-por compatibilidad. Una instalación nueva puede usar la API sin prefijo y
-elegir sus propias rutas públicas.
-
-## Límites de responsabilidad
-
-- Codex razona y ejecuta.
-- El engine conecta una Mac con Codex.
-- El relay guarda y distribuye órdenes y eventos.
-- Los clientes envían operaciones y presentan el estado.
-
----
-
-[← Documentación](README.md) · [Siguiente: Autoalojamiento →](SELF_HOSTING.md)
+[Autoalojamiento →](SELF_HOSTING.md)

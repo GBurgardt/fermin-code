@@ -17,10 +17,8 @@ ocurre mediante eventos o consultas.
 Cada relay trabaja con una generación activa de engine. Para elegir otra Mac,
 el cliente usa otro perfil y otro endpoint.
 
-Una orden de `v0.1` **no** incluye un `hostId`, así que una sola central todavía
-no puede elegir entre varios engines. La estrella N×M de
-[Arquitectura](ARCHITECTURE.md) es el diseño futuro, no una capacidad ya
-implementada.
+Una orden no incluye un `hostId`. No hay selección de varios engines en una
+misma instancia ni una arquitectura futura comprometida.
 
 ## Autenticación
 
@@ -107,14 +105,21 @@ El recorrido habitual es:
 1. `accepted`: el relay ya tiene la orden.
 2. `leased`: el engine reservó esa orden para procesarla.
 3. `engineDurable`: el engine también la guardó en la Mac.
-4. `sentToChild`: la orden llegó al proceso de Codex.
-5. `completed`: el trabajo terminó correctamente.
+4. `sentToChild`: el engine registró un intento, antes de llamar a Codex.
+   No confirma que Codex haya recibido o ejecutado la operación.
+5. `completed`: terminó el manejo de esa operación. En un envío de mensaje
+   puede significar que comenzó el turno, no que terminó la tarea.
 
 El recorrido también puede terminar en `failed`, `cancelled` o `unknown`.
+Al recuperar un engine, un intento que quedó en `sentToChild` pasa a `unknown`.
+Es un estado terminal: no se reenvía automáticamente. Revisá la sesión y los
+efectos externos antes de repetirlo.
 
 Si reintentás la misma acción, enviá la misma clave de idempotencia. Así el
 relay reconoce la orden y no crea otra. Una clave nueva representa una operación
-nueva.
+nueva. Esa deduplicación no hace idempotentes los comandos externos. Tampoco
+un evento de fin de turno demuestra que un despliegue o un objetivo se hayan
+completado correctamente: ese resultado necesita su propia comprobación.
 
 ## Eventos y reconexión
 

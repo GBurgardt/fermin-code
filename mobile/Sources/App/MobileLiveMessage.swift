@@ -380,7 +380,8 @@ enum KycodeLiveMessageReducer {
             pendingSubagent: detail.pendingSubagent,
             collaborationProjectId: detail.collaborationProjectId,
             collaborationProjectName: detail.collaborationProjectName,
-            sessionName: detail.sessionName
+            sessionName: detail.sessionName,
+            isPinned: detail.isPinned
         )
     }
 }
@@ -433,7 +434,10 @@ enum KycodeSessionDetailReconciliationPolicy {
             pendingSubagent: incoming.pendingSubagent ?? current.pendingSubagent,
             collaborationProjectId: incoming.collaborationProjectId ?? current.collaborationProjectId,
             collaborationProjectName: incoming.collaborationProjectName ?? current.collaborationProjectName,
-            sessionName: incoming.sessionName ?? current.sessionName
+            sessionName: incoming.sessionName ?? current.sessionName,
+            isPinned: incoming.updatedAt >= current.updatedAt
+                ? (incoming.isPinned ?? current.isPinned)
+                : (current.isPinned ?? incoming.isPinned)
         )
     }
 

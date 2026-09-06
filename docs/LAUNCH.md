@@ -1,192 +1,60 @@
-# Descripción pública
+# Cómo compartir Fermín Code
 
 [← Documentación](README.md)
 
-Este documento reúne formas claras de explicar Fermín. No es una hoja de ruta
-ni un calendario de producto.
+La intención es publicar una herramienta personal útil y revisable. No
+presentarla como un invento demostrado ni como un reemplazo superior a Codex.
 
-## Definición
+## Descripción corta
 
-Fermín te permite trabajar con las sesiones de Codex que corren en una Mac
-desde el iPhone, otra Mac o cualquier cliente conectado al relay.
+Clientes de iPhone y Mac para trabajar con Codex en una Mac propia.
+Autoalojado, experimental y open source.
 
-El relay queda en el medio. Recibe cada orden, la guarda y se la entrega al
-engine de la Mac. Después conserva lo que ocurrió para que cualquier cliente
-pueda volver a esa historia.
+## Por qué existe
 
-```text
-Cliente
-   ↓
-Relay durable
-   ↓
-Engine del host
-   ↓
-Codex App Server
-```
+Lo construí para dejar varios encargos durante el día y retomarlos desde
+distintos dispositivos, manteniendo los proyectos y las herramientas en la
+misma Mac. Fermín agrega organización y una recepción persistente de órdenes.
+Codex sigue siendo el agente.
 
-Codex piensa y ejecuta el trabajo. Fermín cuida el camino de la orden y la
-historia que queda alrededor.
+Puede servirle a otra persona con un recorrido parecido. Si el cliente oficial
+o Happy le resuelve lo mismo con menos mantenimiento, no necesita Fermín.
 
-## Descripción general
+## Qué mostrar
 
-Podés ejecutar el relay en una Mac o en otro servidor que esté disponible. Cada
-Mac que ejecuta Codex necesita su propio engine, un programa local que conecta
-esa Mac con el relay.
+Una demostración pequeña alcanza:
 
-Los clientes hablan siempre con el relay, nunca directamente con el engine.
-Cuando mandás una orden, el relay:
+1. Crear un pedido desde el iPhone.
+2. Ver en qué host trabaja y distinguir recepción de ejecución.
+3. Cerrar el cliente y retomar la sesión desde la Mac.
+4. Comprobar un resultado concreto.
 
-1. verifica el token;
-2. guarda la orden;
-3. se la entrega al engine cuando está disponible; y
-4. conserva los eventos para que los clientes sepan qué ocurrió.
+Usá un entorno de demostración sin sesiones reales, tokens, dominios privados
+ni credenciales visibles. Si una imagen fue regenerada, decilo; no la presentes
+como una captura de una prueba. [Procedencia de las imágenes](images/README.md).
 
-Le decimos *durable* porque guarda la orden antes de responder `accepted`. No se
-limita a pasar datos mientras una conexión está abierta.
+## Borrador para compartir
 
-## Resumen ejecutivo
-
-> Fermín permite trabajar con las sesiones de Codex de una Mac desde Mobile,
-> Desktop u otro cliente. Todos hablan con un relay autoalojado que guarda cada
-> orden antes de aceptarla, se la entrega al engine de la Mac y conserva lo que
-> ocurrió. Así los clientes pueden reintentar, desconectarse y volver sin
-> publicar Codex App Server directamente en Internet.
-
-## Explicación no técnica
-
-> Fermín pone una central entre tus dispositivos y la Mac donde trabaja Codex.
-> Mandás una orden, la central la guarda y se la pasa a esa Mac. Si cerrás el
-> cliente o perdés la conexión, después podés volver y ver qué ocurrió.
-
-## Definición breve
-
-> **Fermín guarda las órdenes que mandás desde tus clientes y se las entrega a
-> la Mac donde corre Codex.**
-
-## Resultado operativo
-
-Podés mandar una orden desde Mobile, cerrar la app y recuperar los eventos más
-tarde. Cuando el relay responde `accepted`, la orden ya quedó guardada.
-
-Para que esto funcione se tienen que cumplir dos condiciones:
-
-- el relay tiene que seguir disponible para recibir órdenes nuevas; y
-- el host tiene que volver a conectarse para que Codex ejecute el trabajo
-  pendiente.
-
-Fermín no enciende una Mac apagada y no sustituye la política de sandbox y
-aprobaciones de Codex.
-
-## Capacidades verificables en `v0.1`
-
-- Los clientes se conectan al relay, no al engine.
-- El relay guarda órdenes y eventos.
-- Una clave de idempotencia permite reintentar sin crear otra orden.
-- Cada cliente recuerda su cursor y retoma la historia desde ahí.
-- Leases y fencing evitan que una conexión vieja del engine siga teniendo
-  autoridad.
-- El engine se ejecuta junto a Codex en la Mac host.
-- Mobile y Desktop implementan el contrato del relay.
-
-La versión `v0.1` usa una instancia relay–engine por host. Los clientes eligen
-entre endpoints Primary y Secondary.
-
-## Arquitectura objetivo
-
-El diseño futuro registra varios hosts en un mismo relay. Cada orden indica en
-qué host debe ejecutarse y el relay selecciona el engine correspondiente.
-
-Para hacerlo bien hacen falta identidad, autorización, almacenamiento y fencing
-por host. No está implementado en `v0.1` y no tiene una fecha de entrega
-publicada.
-
-## Capacidades no incluidas
-
-La versión actual no incluye:
-
-- instalación de un paso;
-- relay alojado;
-- routing multi-host en una instancia;
-- cuentas o aislamiento multi-tenant;
-- wake garantizado de una Mac;
-- disponibilidad continua;
-- cifrado de extremo a extremo; o
-- distribución binaria firmada y notarizada.
-
-## Estado de la publicación
-
-Repositorio:
-
-<https://github.com/GBurgardt/fermin-code>
-
-La publicación incluye:
-
-- código del relay, engine, Mobile y Desktop;
-- CI para Rust, macOS e iOS;
-- secret scanning y push protection;
-- reporte privado de vulnerabilidades;
-- imágenes con contenido de demostración; y
-- límites de autoalojamiento documentados.
-
-Todavía falta una prueba independiente de la guía completa en una tercera Mac
-sin configuración previa.
-
-## Canales de publicación
-
-Los textos siguientes son borradores factuales. Deben actualizarse si cambia el
-estado del repositorio.
-
-<details>
-<summary><strong>X</strong></summary>
-
-> Publiqué Fermín `v0.1` como proyecto open source.
+> Abrí el código de Fermín Code, una herramienta que hice para mi forma de
+> trabajar con Codex en una Mac propia desde el iPhone u otra Mac.
 >
-> Me permite trabajar con las sesiones de Codex de una Mac desde el iPhone u
-> otra Mac. Incluye un relay durable, un engine local y clientes para iOS y
-> macOS.
+> Agrega clientes, organización de sesiones y un relay que guarda los pedidos
+> antes de confirmar su recepción. Codex sigue haciendo el trabajo.
 >
-> El relay guarda cada orden antes de aceptarla y conserva la historia para que
-> los clientes puedan desconectarse y volver. La versión actual usa un par
-> relay–engine por host.
+> Es experimental y requiere configurar el entorno. Lo comparto para que
+> otros lo prueben y me cuenten qué les sirve y qué les sobra.
 >
-> [github.com/GBurgardt/fermin-code](https://github.com/GBurgardt/fermin-code)
+> [Repositorio](https://github.com/GBurgardt/fermin-code)
 
-</details>
+Es un borrador, no una publicación realizada.
 
-<details>
-<summary><strong>Show HN</strong></summary>
+## Qué no prometer
 
-Las [reglas de Hacker News](https://news.ycombinator.com/newsguidelines.html)
-piden no publicar texto generado o editado por IA. El autor debe redactar la
-versión final.
+No afirmar “nunca pierde mensajes”, “ejecuta exactamente una vez”, “no necesita
+mantenimiento”, “misma experiencia completa que Codex” o “más confiable que
+Happy”. Tampoco convertir planes multi-host en funciones actuales.
 
-El post puede documentar:
-
-- el problema técnico;
-- la separación entre relay, engine y Codex App Server;
-- persistencia, replay, idempotencia y fencing;
-- el alcance de `v0.1`;
-- la arquitectura objetivo; y
-- el tipo de revisión técnica solicitada.
-
-Usá un título descriptivo con el prefijo `Show HN:`. No pidas votos ni
-comentarios coordinados.
-
-</details>
-
-<details>
-<summary><strong>Product Hunt</strong></summary>
-
-La [guía oficial de Product Hunt](https://help.producthunt.com/en/articles/479557-how-to-post-a-product)
-requiere una URL de producto, descripción, galería y material de lanzamiento.
-
-`v0.1` es un repositorio para desarrolladores. No incluye servicio alojado ni
-instalación guiada. Product Hunt no es un canal adecuado para esta versión.
-Esta evaluación puede revisarse si cambia el producto; no constituye un
-compromiso de desarrollo.
-
-</details>
-
----
-
-[← Documentación](README.md) · [Volver al repositorio →](../README.md)
+El repositorio incluye CI, pruebas y una guía de configuración. No equivale a
+una instalación completa verificada por un tercero ni a un servicio alojado.
+El [README](../README.md) y el [modelo de seguridad](SECURITY_MODEL.md) explican
+las condiciones y límites.
